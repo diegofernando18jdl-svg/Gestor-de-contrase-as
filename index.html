@@ -151,6 +151,36 @@
             transition: background-color 0.3s, border-color 0.3s;
         }
 
+        /* Contenedor especial para el input de password con botón */
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .password-input-wrapper input {
+            margin-bottom: 0; /* Quitamos margen porque el wrapper lo maneja */
+            padding-right: 40px; /* Espacio para el ojito */
+        }
+
+        .toggle-password-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            width: auto;
+            font-size: 1rem;
+        }
+        .toggle-password-btn:hover {
+            color: var(--accent-color);
+            background: none;
+        }
+
+
         .checkbox-wrapper { display: flex; align-items: center; margin-bottom: 15px; gap: 10px; }
 
         button {
@@ -308,7 +338,12 @@
             <input type="text" id="userName" placeholder="tu@email.com">
 
             <label>Contraseña:</label>
-            <input type="text" id="passwordSave" placeholder="...">
+            <div class="password-input-wrapper">
+                <input type="password" id="passwordSave" placeholder="...">
+                <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('passwordSave', this)">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
 
             <button onclick="addEntry()"><i class="fas fa-cloud-upload-alt"></i> Guardar en Nube</button>
         </div>
@@ -416,6 +451,22 @@
 
     // --- LÓGICA DE LA APP ---
 
+    // Nueva función para togglear visibilidad del input de password
+    function togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const icon = btn.querySelector('i');
+        
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = "password";
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
     // Generar Pass
     function generatePass() {
         const length = parseInt(document.getElementById('length').value);
@@ -431,7 +482,16 @@
         for (let i = 0; i < length; i++) retVal += charset.charAt(array[i] % charset.length);
         
         document.getElementById('passwordResult').textContent = retVal;
-        document.getElementById('passwordSave').value = retVal; 
+        document.getElementById('passwordSave').value = retVal;
+        
+        // Si se genera, asegurar que el input esté en modo password para que no se vea por accidente
+        // o si prefieres que se vea al generar, cambia abajo a "text"
+        document.getElementById('passwordSave').type = "text"; 
+        // Actualizamos icono si estaba cerrado
+        const btn = document.querySelector('.toggle-password-btn i');
+        btn.classList.remove('fa-eye');
+        btn.classList.add('fa-eye-slash');
+
         mostrarFeedback("¡Generada!");
     }
 
@@ -455,6 +515,13 @@
             document.getElementById('userName').value = "";
             document.getElementById('passwordSave').value = "";
             document.getElementById('passwordResult').textContent = "---";
+            
+            // Resetear visibilidad del input
+            document.getElementById('passwordSave').type = "password";
+            const btn = document.querySelector('.toggle-password-btn i');
+            btn.classList.remove('fa-eye-slash');
+            btn.classList.add('fa-eye');
+
             mostrarFeedback("Guardado en la Nube");
         } catch (e) {
             alert("Error: " + e.message);
