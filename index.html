@@ -219,7 +219,7 @@
     // --- VARIABLES Y ESTADO ---
     let isRegisterMode = false;
     let currentUser = null;
-    let localData = []; // Para poder ordenar localmente
+    let localData = []; // Para poder ordenar localmente sin gastar lecturas
     let editingId = null; // ID del documento que se está editando
 
     function togglePass(id, btn) {
@@ -291,6 +291,7 @@
     // --- GUARDAR O ACTUALIZAR (EDITAR) ---
     async function saveEntry() {
         let siteInput = document.getElementById('siteDomain').value;
+        // Limpieza de espacios y caracteres para el dominio
         let siteClean = siteInput.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
         if(siteClean && !siteClean.includes('.')) siteClean += ".com";
         
@@ -309,7 +310,7 @@
             };
 
             if (editingId) {
-                // UPDATE
+                // MODO ACTUALIZACIÓN
                 await db.collection('users').doc(currentUser.uid).collection('passwords').doc(editingId).update({
                     site: siteClean,
                     displaySite: siteInput,
@@ -319,7 +320,7 @@
                 showMsg("¡Actualizado!");
                 cancelEdit(); 
             } else {
-                // CREATE
+                // MODO CREACIÓN
                 await db.collection('users').doc(currentUser.uid).collection('passwords').add(dataToSave);
                 showMsg("¡Guardado!");
                 document.getElementById('siteDomain').value = "";
@@ -358,6 +359,8 @@
 
     // --- CARGA Y ORDENAMIENTO ---
     function loadDataRealtime() {
+        const showLogos = document.getElementById('logoSwitch').checked;
+        
         db.collection('users').doc(currentUser.uid).collection('passwords')
         .onSnapshot(snap => {
             localData = [];
@@ -386,7 +389,7 @@
         localData.forEach(d => {
             const row = document.createElement('tr');
             
-            // Logos Personalizados
+            // Lógica de Logos Personalizados
             let logoUrl = `https://www.google.com/s2/favicons?domain=${d.site}&sz=64`;
             if (d.site.includes("nacional")) {
                 logoUrl = "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/5f/8c/29/5f8c290e-1aa1-090c-9900-502802802802/AppIcon-0-0-1x_U007emarketing-0-0-0-7-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/512x512bb.jpg";
