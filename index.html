@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor Cloud Ultimate - Versión Completa</title>
-    
+    <title>Gestor Cloud Ultimate</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <style>
-        /* --- ESTILOS VISUALES COMPLETOS --- */
+        /* --- VARIABLES DE COLOR (THEMING) --- */
         :root {
             --primary-color: #2c3e50;
             --accent-color: #3498db;
@@ -25,12 +23,10 @@
             --input-border: #ddd;
             --success-color: #27ae60;
             --warning-color: #f39c12;
-            --danger-color: #e74c3c;
             --row-hover: #f9f9f9;
             --code-bg: #f8f9fa;
         }
 
-        /* TEMA OSCURO */
         [data-theme="dark"] {
             --primary-color: #ecf0f1;
             --accent-color: #3498db;
@@ -43,7 +39,6 @@
             --input-border: #444;
             --success-color: #2ecc71;
             --warning-color: #f1c40f;
-            --danger-color: #c0392b;
             --row-hover: #252525;
             --code-bg: #2c2c2c;
         }
@@ -63,398 +58,204 @@
         .container {
             background-color: var(--card-bg);
             width: 100%;
-            max-width: 850px; 
-            padding: 2.5rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 800px; 
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             transition: background-color 0.3s;
         }
 
         /* --- PANTALLA DE LOGIN --- */
         #login-screen {
             text-align: center;
-            max-width: 420px;
+            max-width: 400px;
             margin: 0 auto;
-            padding-top: 20px;
+            padding-top: 40px;
         }
         
         #app-screen {
-            display: none; /* Oculto por defecto hasta loguear */
-        }
-
-        .login-icon {
-            font-size: 4rem;
-            color: var(--accent-color);
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        .link-text {
-            margin-top: 20px;
-            color: var(--accent-color);
-            cursor: pointer;
-            font-size: 0.95rem;
-            display: inline-block;
-        }
-        .link-text:hover { text-decoration: underline; }
-        
-        .error-msg {
-            color: var(--danger-color);
-            margin-top: 15px;
-            font-size: 0.9rem;
-            min-height: 20px;
-        }
-
-        /* --- FORMULARIOS E INPUTS --- */
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--primary-color);
-            font-size: 0.9rem;
-        }
-
-        input[type="text"], 
-        input[type="number"], 
-        input[type="email"], 
-        input[type="password"],
-        select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid var(--input-border);
-            border-radius: 8px;
-            box-sizing: border-box;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            font-size: 1rem;
-            transition: 0.3s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
-
-        /* CONTENEDOR DE CONTRASEÑA CON OJO */
-        .password-input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .password-input-wrapper input {
-            margin-bottom: 0;
-            padding-right: 45px;
-        }
-        .toggle-password-btn {
-            position: absolute;
-            right: 12px;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 1.1rem;
-            padding: 5px;
-            width: auto;
-            display: flex;
-            align-items: center;
-        }
-        .toggle-password-btn:hover { color: var(--accent-color); }
-
-        /* --- BOTONES --- */
-        button {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        button:hover {
-            filter: brightness(1.1);
-            transform: translateY(-1px);
-        }
-        button:active { transform: translateY(0); }
-
-        #cancelEditBtn {
-            background-color: #7f8c8d;
-            margin-top: 10px;
             display: none; /* Oculto por defecto */
         }
 
-        /* --- CABECERA Y CONTROLES --- */
+        .login-icon {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+        }
+
+        .link-text {
+            margin-top: 15px;
+            color: var(--accent-color);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .link-text:hover { text-decoration: underline; }
+        .error-msg { color: #e74c3c; margin-top: 10px; font-size: 0.9rem; }
+
+        /* --- ESTILOS DE LA APP --- */
         .header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
             gap: 15px;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 1rem;
         }
 
-        h2 { 
-            margin: 0; 
-            color: var(--primary-color); 
-            display: flex; 
-            align-items: center; 
-            gap: 12px;
-            font-size: 1.8rem;
-        }
+        h2 { margin: 0; color: var(--primary-color); display: flex; align-items: center; gap: 10px; }
 
-        .top-controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
+        .top-controls { display: flex; gap: 15px; align-items: center; }
 
-        /* Switches */
-        .switch-group {
+        .theme-switch-wrapper, .privacy-switch-wrapper {
             display: flex;
             align-items: center;
-            gap: 10px;
+            font-size: 0.8rem;
             color: var(--text-secondary);
-            font-size: 0.9rem;
         }
         
         .switch {
-            position: relative;
             display: inline-block;
-            width: 46px;
-            height: 24px;
+            height: 20px;
+            position: relative;
+            width: 40px;
+            margin-left: 8px;
         }
         .switch input { display: none; }
         .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
             background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
+            bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0;
+            transition: .4s; border-radius: 34px;
         }
         .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
+            background-color: #fff; bottom: 3px; content: ""; height: 14px; left: 3px;
+            position: absolute; transition: .4s; width: 14px; border-radius: 50%;
         }
         input:checked + .slider { background-color: var(--accent-color); }
-        input:checked + .slider:before { transform: translateX(22px); }
+        input:checked + .slider:before { transform: translateX(20px); }
 
-        /* --- SECCIONES --- */
         .section {
-            margin-bottom: 2.5rem;
-            padding: 1.5rem;
-            background-color: var(--row-hover);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-        }
-        
-        .section h3 {
-            margin-top: 0;
-            margin-bottom: 1rem;
-            color: var(--primary-color);
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
         }
 
-        .generator-box {
+        label {
+            display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color); font-size: 0.9rem;
+        }
+
+        input[type="text"], input[type="number"], input[type="file"], input[type="email"], input[type="password"] {
+            width: 100%; padding: 10px; margin-bottom: 15px;
+            border: 1px solid var(--input-border); border-radius: 6px;
+            box-sizing: border-box; background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        /* --- NUEVO ESTILO PARA EL OJITO --- */
+        .password-wrapper {
+            position: relative;
             display: flex;
-            gap: 15px;
             align-items: center;
             margin-bottom: 15px;
         }
+        .password-wrapper input {
+            margin-bottom: 0;
+            padding-right: 40px; /* Espacio para el icono */
+        }
+        .eye-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 5px;
+            width: auto; /* Sobrescribe el ancho 100% de los botones normales */
+        }
+        .eye-btn:hover { color: var(--accent-color); background: none; }
+        /* ---------------------------------- */
+
+        .checkbox-wrapper { display: flex; align-items: center; margin-bottom: 15px; gap: 10px; }
+
+        button {
+            background-color: var(--accent-color); color: white; border: none;
+            padding: 10px 20px; border-radius: 6px; cursor: pointer;
+            font-size: 1rem; width: 100%; transition: background 0.3s, transform 0.1s;
+        }
+        button:hover { background-color: #2980b9; }
+        button:active { transform: scale(0.98); }
+
+        .action-btn {
+            background-color: transparent; color: #7f8c8d; border: 1px solid var(--input-border);
+            width: 32px; height: 32px; padding: 0; border-radius: 4px;
+            display: inline-flex; align-items: center; justify-content: center;
+            margin-left: 5px; cursor: pointer;
+        }
+        .action-btn:hover { background-color: var(--row-hover); color: var(--primary-color); }
+
+        .delete-btn { color: #e74c3c; border-color: #e74c3c; }
+        .delete-btn:hover { background-color: #e74c3c; color: white; }
 
         .result-box {
-            background: var(--code-bg);
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 1.2rem;
-            text-align: center;
-            margin: 15px 0;
-            letter-spacing: 2px;
-            border: 2px dashed var(--border-color);
-            color: var(--accent-color);
-            word-break: break-all;
-            min-height: 24px;
+            background: var(--code-bg); padding: 15px; border-radius: 6px;
+            font-family: 'Consolas', monospace; font-size: 1.4rem; text-align: center;
+            margin: 15px 0; letter-spacing: 2px; border: 2px dashed var(--input-border);
+            color: var(--accent-color); word-break: break-all;
         }
 
-        /* --- TABLA DE DATOS --- */
-        .sort-control {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .sort-select {
-            width: auto;
-            margin-bottom: 0;
-            padding: 8px 15px;
-            font-size: 0.9rem;
-            background-color: var(--card-bg);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 8px;
-        }
-
+        /* TABLA */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; margin-top: 10px; }
         th {
-            text-align: left;
-            padding: 12px 15px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
+            text-align: left; padding: 10px; font-size: 0.85rem; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--border-color);
         }
-
         td {
-            background: var(--input-bg);
-            padding: 15px;
-            vertical-align: middle;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-color);
-            transition: background-color 0.2s;
+            background: var(--input-bg); padding: 15px 10px; font-size: 0.95rem; vertical-align: middle;
+            border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+            color: var(--text-color); transition: background-color 0.3s;
         }
+        td:first-child { border-left: 1px solid var(--border-color); border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+        td:last-child { border-right: 1px solid var(--border-color); border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
 
-        td:first-child {
-            border-left: 1px solid var(--border-color);
-            border-top-left-radius: 10px;
-            border-bottom-left-radius: 10px;
-        }
-
-        td:last-child {
-            border-right: 1px solid var(--border-color);
-            border-top-right-radius: 10px;
-            border-bottom-right-radius: 10px;
-            text-align: right;
-        }
-
-        .logo-cell {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: bold;
-            font-size: 1rem;
-        }
-
+        .logo-cell { display: flex; align-items: center; gap: 10px; font-weight: bold; }
         .site-logo {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            object-fit: contain;
-            background: white;
-            padding: 2px;
-            border: 1px solid #eee;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            width: 24px; height: 24px; border-radius: 4px; object-fit: contain;
+            background: white; padding: 2px;
+        }
+
+        .user-cell { display: flex; align-items: center; justify-content: space-between; max-width: 220px; }
+        .user-text {
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            margin-right: 5px; font-size: 0.9rem; color: var(--text-secondary);
         }
 
         .password-code {
-            background: var(--code-bg);
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-family: monospace;
-            color: var(--accent-color);
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: all 0.2s;
-            filter: blur(5px);
-            user-select: none;
+            background: var(--code-bg); padding: 4px 8px; border-radius: 4px;
+            font-family: monospace; color: var(--accent-color); border: 1px solid var(--border-color);
+            cursor: pointer; transition: 0.2s; filter: blur(4px);
         }
-        
-        .password-code:hover {
-            filter: blur(0);
-            background: var(--bg-color);
-        }
-
-        /* Botones de acción en tabla */
-        .action-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-        }
-
-        .action-btn {
-            background-color: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            width: 36px;
-            height: 36px;
-            padding: 0;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            transition: all 0.2s;
-        }
-
-        .action-btn:hover {
-            background-color: var(--row-hover);
-            color: var(--accent-color);
-            transform: scale(1.05);
-        }
-
-        .edit-btn:hover {
-            color: var(--warning-color);
-            border-color: var(--warning-color);
-            background-color: rgba(243, 156, 18, 0.1);
-        }
-
-        .delete-btn:hover {
-            color: var(--danger-color);
-            border-color: var(--danger-color);
-            background-color: rgba(231, 76, 60, 0.1);
-        }
-
-        .user-badge {
-            background: var(--accent-color);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
+        .password-code:hover { filter: blur(0); }
 
         .copy-feedback {
-            text-align: center;
-            color: var(--success-color);
-            font-weight: bold;
-            font-size: 0.9rem;
-            height: 20px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            margin-top: 5px;
+            text-align: center; color: var(--success-color); font-weight: bold;
+            font-size: 0.9rem; height: 20px; margin-bottom: 5px;
+            opacity: 0; transition: opacity 0.3s;
         }
         .copy-feedback.visible { opacity: 1; }
 
-        /* Responsive */
+        .user-badge {
+            background: var(--accent-color); color: white; padding: 4px 10px;
+            border-radius: 20px; font-size: 0.8rem; margin-right: 10px;
+        }
+
         @media (max-width: 600px) {
-            .container { padding: 1.5rem; }
-            th, td { padding: 10px 5px; font-size: 0.85rem; }
-            .action-btn { width: 30px; height: 30px; }
-            .header-row { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .top-controls { width: 100%; justify-content: space-between; }
-            .logo-cell { font-size: 0.9rem; }
-            .site-logo { width: 24px; height: 24px; }
+            .container { padding: 1rem; }
+            th, td { font-size: 0.8rem; padding: 10px 5px; }
+            .action-btn { width: 28px; height: 28px; }
+            .user-cell { flex-direction: column; align-items: flex-start; }
+            .action-btn { margin-left: 0; margin-top: 5px; }
+            .header-row { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
@@ -465,37 +266,34 @@
     <div id="login-screen">
         <i class="fas fa-fingerprint login-icon"></i>
         <h2 id="auth-title" style="justify-content: center;">Iniciar Sesión</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 30px;">Tu bóveda segura en la nube</p>
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">Tu bóveda segura en la nube</p>
         
-        <label style="text-align: left;">Correo Electrónico</label>
-        <input type="email" id="auth-email" placeholder="ejemplo@correo.com">
+        <input type="email" id="auth-email" placeholder="Correo electrónico">
         
-        <label style="text-align: left;">Contraseña Maestra</label>
-        <div class="password-input-wrapper">
-            <input type="password" id="auth-password" placeholder="••••••••">
-            <button type="button" class="toggle-password-btn" onclick="togglePass('auth-password', this)">
+        <div class="password-wrapper">
+            <input type="password" id="auth-password" placeholder="Contraseña">
+            <button type="button" class="eye-btn" onclick="togglePass('auth-password', this)">
                 <i class="fas fa-eye"></i>
             </button>
         </div>
         
-        <button onclick="handleAuth()" id="auth-btn">Entrar a la Bóveda</button>
+        <button onclick="handleAuth()" id="auth-btn">Entrar</button>
         <div id="auth-error" class="error-msg"></div>
 
         <div class="link-text" onclick="toggleAuth()" id="toggle-text">
-            ¿No tienes cuenta? <b>Regístrate gratis aquí</b>
+            ¿No tienes cuenta? Regístrate gratis aquí
         </div>
     </div>
 
 
     <div id="app-screen">
-        
         <div class="header-row">
             <h2><i class="fas fa-shield-alt"></i> Gestor Cloud</h2>
             
             <div class="top-controls">
                 <span id="user-display" class="user-badge">Usuario</span>
 
-                <div class="switch-group">
+                <div class="privacy-switch-wrapper">
                     <i class="fas fa-image" title="Mostrar Logos"></i>
                     <label class="switch">
                         <input type="checkbox" id="logoSwitch" checked>
@@ -503,7 +301,7 @@
                     </label>
                 </div>
                 
-                <div class="switch-group">
+                <div class="theme-switch-wrapper">
                     <i class="fas fa-moon" title="Modo Oscuro"></i>
                     <label class="switch">
                         <input type="checkbox" id="themeSwitch">
@@ -511,163 +309,97 @@
                     </label>
                 </div>
 
-                <button onclick="logout()" style="width: auto; padding: 8px 15px; background: var(--danger-color); font-size: 0.9rem;" title="Cerrar Sesión">
+                <button onclick="logout()" style="width: auto; padding: 5px 10px; background: #e74c3c; font-size: 0.8rem;">
                     <i class="fas fa-sign-out-alt"></i>
                  </button>
             </div>
         </div>
 
         <div class="section">
-            <h3><i class="fas fa-magic"></i> Generar Contraseña</h3>
-            
-            <div class="generator-box">
-                 <input type="number" id="length" min="4" max="50" value="16" style="width: 80px; margin:0;">
-                 <div style="display:flex; align-items:center;">
-                    <input type="checkbox" id="useSymbols" checked style="width:auto; margin:0 8px 0 0;"> 
-                    <label for="useSymbols" style="margin:0; font-weight:normal;">Incluir Símbolos (!@#)</label>
+            <h3>1. Generar Contraseña</h3>
+            <div style="display:flex; gap:10px;">
+                 <input type="number" id="length" min="4" max="50" value="16" style="width: 80px;">
+                 <div class="checkbox-wrapper" style="margin-bottom: 15px;">
+                    <input type="checkbox" id="useSymbols" checked>
+                    <label for="useSymbols" style="margin:0; font-weight:normal;">Símbolos (!@#)</label>
                 </div>
             </div>
             
-            <button onclick="generatePass()">Generar Nueva</button>
+            <button onclick="generatePass()"><i class="fas fa-magic"></i> Generar</button>
             <div class="result-box" id="passwordResult">---</div>
-            <div class="copy-feedback" id="feedbackMsg">Copiado al portapapeles</div>
+            <div class="copy-feedback" id="feedbackMsg">Acción realizada</div>
         </div>
 
         <div class="section">
-            <h3 id="formTitle"><i class="fas fa-save"></i> Guardar Datos</h3>
-            
-            <label>Sitio Web / Servicio</label>
-            <input type="text" id="siteDomain" placeholder="Ej: Qik, La Nacional, Google, Netflix...">
+            <h3>2. Guardar Datos (Cloud)</h3>
+            <label>Servicio (ej: google):</label>
+            <input type="text" id="siteDomain" placeholder="Dominio del sitio">
 
-            <label>Usuario / Correo</label>
-            <input type="text" id="userName" placeholder="usuario@ejemplo.com">
+            <label>Usuario / Correo:</label>
+            <input type="text" id="userName" placeholder="tu@email.com">
 
-            <label>Contraseña</label>
-            <div class="password-input-wrapper">
-                <input type="password" id="passwordSave" placeholder="Escribe o genera una contraseña">
-                <button type="button" class="toggle-password-btn" onclick="togglePass('passwordSave', this)">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </div>
+            <label>Contraseña:</label>
+            <input type="text" id="passwordSave" placeholder="...">
 
-            <button onclick="saveEntry()" id="saveBtn"><i class="fas fa-cloud-upload-alt"></i> Guardar en Nube</button>
-            <button onclick="cancelEdit()" id="cancelEditBtn"><i class="fas fa-times"></i> Cancelar Edición</button>
+            <button onclick="addEntry()"><i class="fas fa-cloud-upload-alt"></i> Guardar en Nube</button>
         </div>
 
         <div>
-            <div class="sort-control">
-                <h3><i class="fas fa-list"></i> Mis Cuentas</h3>
-                <select id="sortSelect" class="sort-select" onchange="renderLocalData()">
-                    <option value="date">📅 Más Recientes</option>
-                    <option value="alpha">🔤 Alfabético (A-Z)</option>
-                </select>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3>3. Mis Cuentas</h3>
             </div>
             
             <table id="dataTable">
                 <thead>
                     <tr>
                         <th style="width: 30%">Servicio</th>
-                        <th style="width: 30%">Usuario</th>
-                        <th style="width: 25%">Pass</th>
-                        <th style="width: 15%; text-align:right;">Acciones</th>
+                        <th style="width: 35%">Usuario</th>
+                        <th style="width: 20%">Pass</th>
+                        <th style="width: 15%">Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody">
-                    </tbody>
+                <tbody id="tableBody"></tbody>
             </table>
         </div>
     </div>
 </div>
 
 <script>
-    // ======================================================
-    // 1. CONFIGURACIÓN FIREBASE (TUS CREDENCIALES REALES)
-    // ======================================================
+    // --- 1. CONFIGURACIÓN FIREBASE (TU PROYECTO REAL) ---
     const firebaseConfig = {
-      apiKey: "AIzaSyAMMjFRkXNCV7jkgAukBdbEhL8elk8yHSA",
-      authDomain: "gestor-de-claves-90931.firebaseapp.com",
-      projectId: "gestor-de-claves-90931",
-      storageBucket: "gestor-de-claves-90931.firebasestorage.app",
-      messagingSenderId: "162138922448",
-      appId: "1:162138922448:web:c2fe68170c86ff089fadd5",
-      measurementId: "G-3VYEZV1D3N"
+        apiKey: "AIzaSyAMMjFRkXNCV7jkgAukBdbEhL8elk8yHSA",
+        authDomain: "gestor-de-claves-90931.firebaseapp.com",
+        projectId: "gestor-de-claves-90931",
+        storageBucket: "gestor-de-claves-90931.firebasestorage.app",
+        messagingSenderId: "162138922448",
+        appId: "1:162138922448:web:c2fe68170c86ff089fadd5",
+        measurementId: "G-3VYEZV1D3N"
     };
 
     // Inicializar Firebase
-    try { 
-        firebase.initializeApp(firebaseConfig); 
-        console.log("Firebase conectado correctamente");
-    } catch(e) { 
-        console.error("Error conectando Firebase:", e); 
+    try {
+        firebase.initializeApp(firebaseConfig);
+    } catch(e) {
+        console.error("Firebase Error:", e);
     }
     
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ======================================================
-    // 2. VARIABLES Y ESTADO
-    // ======================================================
+    // --- VARIABLES Y ESTADO ---
     let isRegisterMode = false;
     let currentUser = null;
-    let localData = []; // Cache local para ordenar sin gastar lecturas
-    let editingId = null; // ID del registro que se está editando actualmente
 
-    // ======================================================
-    // 3. FUNCIONES DE UTILIDAD (UI)
-    // ======================================================
-    
-    // Alternar visibilidad de contraseña (Ojito)
-    function togglePass(inputId, btn) {
-        const input = document.getElementById(inputId);
-        const icon = btn.querySelector('i');
-        if (input.type === "password") {
-            input.type = "text";
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            input.type = "password";
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
-    }
-
-    // Copiar al portapapeles
-    function copiar(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            showMsg("¡Copiado al portapapeles!");
-        }).catch(err => {
-            console.error('Error al copiar: ', err);
-        });
-    }
-
-    // Mostrar mensaje flotante temporal
-    function showMsg(msg) {
-        const el = document.getElementById('feedbackMsg');
-        el.textContent = msg;
-        el.classList.add('visible');
-        setTimeout(() => el.classList.remove('visible'), 2000);
-    }
-
-    // Escapar HTML para evitar XSS
-    function escapeHTML(str) { 
-        if (!str) return "";
-        return str.replace(/[&<>'"]/g, tag => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-        }[tag]));
-    }
-
-    // ======================================================
-    // 4. LÓGICA DE AUTENTICACIÓN
-    // ======================================================
-    
-    // Monitor de estado de usuario (Sesión persistente)
+    // --- LÓGICA DE AUTENTICACIÓN ---
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'block';
             document.getElementById('user-display').textContent = user.email.split('@')[0];
-            loadDataRealtime(); // Cargar datos
+            
+            // Cargar datos en tiempo real al loguearse
+            loadData();
         } else {
             currentUser = null;
             document.getElementById('app-screen').style.display = 'none';
@@ -675,21 +407,14 @@
         }
     });
 
-    // Cambiar entre Login y Registro
     function toggleAuth() {
         isRegisterMode = !isRegisterMode;
-        document.getElementById('auth-title').innerText = isRegisterMode ? "Crear Nueva Cuenta" : "Iniciar Sesión";
-        document.getElementById('auth-btn').innerText = isRegisterMode ? "Registrarse Gratis" : "Entrar";
-        
-        const toggleText = document.getElementById('toggle-text');
-        toggleText.innerHTML = isRegisterMode ? 
-            "¿Ya tienes cuenta? <b>Inicia sesión aquí</b>" : 
-            "¿No tienes cuenta? <b>Regístrate gratis aquí</b>";
-            
+        document.getElementById('auth-title').innerText = isRegisterMode ? "Crear Cuenta" : "Iniciar Sesión";
+        document.getElementById('auth-btn').innerText = isRegisterMode ? "Registrarse" : "Entrar";
+        document.getElementById('toggle-text').innerText = isRegisterMode ? "¿Ya tienes cuenta? Inicia sesión" : "¿No tienes cuenta? Regístrate gratis aquí";
         document.getElementById('auth-error').innerText = "";
     }
 
-    // Procesar Login/Registro
     async function handleAuth() {
         const email = document.getElementById('auth-email').value;
         const pass = document.getElementById('auth-password').value;
@@ -697,34 +422,47 @@
         errDisplay.innerText = "";
 
         if(!email || !pass) {
-            errDisplay.innerText = "Por favor, rellena correo y contraseña.";
+            errDisplay.innerText = "Rellena todos los campos";
             return;
         }
 
         try {
             if (isRegisterMode) {
                 await auth.createUserWithEmailAndPassword(email, pass);
-                alert("¡Cuenta creada con éxito! Bienvenido.");
+                alert("Cuenta creada con éxito.");
             } else {
                 await auth.signInWithEmailAndPassword(email, pass);
             }
         } catch (error) {
-            console.error(error);
-            let msg = "Error desconocido.";
-            if(error.code === 'auth/wrong-password') msg = "La contraseña es incorrecta.";
-            if(error.code === 'auth/user-not-found') msg = "No existe una cuenta con este correo.";
-            if(error.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado.";
-            if(error.code === 'auth/invalid-email') msg = "El formato del correo no es válido.";
-            if(error.code === 'auth/too-many-requests') msg = "Muchos intentos fallidos. Espera un poco.";
+            let msg = error.message;
+            if(error.code === 'auth/wrong-password') msg = "Contraseña incorrecta";
+            if(error.code === 'auth/user-not-found') msg = "Usuario no encontrado";
+            if(error.code === 'auth/email-already-in-use') msg = "El correo ya está registrado";
             errDisplay.innerText = msg;
         }
     }
 
     function logout() { auth.signOut(); }
 
-    // ======================================================
-    // 5. GENERADOR DE CONTRASEÑAS
-    // ======================================================
+
+    // --- LÓGICA DE LA APP ---
+
+    // NUEVA FUNCIÓN: Toggle Ojito
+    function togglePass(id, btn) {
+        const input = document.getElementById(id);
+        const icon = btn.querySelector('i');
+        if(input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    // Generar Pass
     function generatePass() {
         const length = parseInt(document.getElementById('length').value);
         const useSymbols = document.getElementById('useSymbols').checked;
@@ -733,249 +471,132 @@
         
         let charset = charsBase + (useSymbols ? symbols : "");
         let retVal = "";
-        
-        // Criptografía segura del navegador
         const array = new Uint32Array(length);
         window.crypto.getRandomValues(array);
         
-        for (let i = 0; i < length; i++) {
-            retVal += charset.charAt(array[i] % charset.length);
-        }
+        for (let i = 0; i < length; i++) retVal += charset.charAt(array[i] % charset.length);
         
         document.getElementById('passwordResult').textContent = retVal;
-        document.getElementById('passwordSave').value = retVal;
-        
-        // Mostrar la contraseña en el input al generarla
-        const passInput = document.getElementById('passwordSave');
-        passInput.type = "text"; 
-        // Actualizar icono del ojo
-        const btnIcon = document.querySelector('#passwordSave + button i');
-        if(btnIcon) {
-            btnIcon.classList.remove('fa-eye');
-            btnIcon.classList.add('fa-eye-slash');
-        }
-        
-        showMsg("¡Contraseña Generada!");
+        document.getElementById('passwordSave').value = retVal; 
+        mostrarFeedback("¡Generada!");
     }
 
-    // ======================================================
-    // 6. GESTIÓN DE DATOS (CRUD)
-    // ======================================================
-
-    // GUARDAR O ACTUALIZAR
-    async function saveEntry() {
-        // Obtenemos los valores
-        let siteInput = document.getElementById('siteDomain').value.trim();
-        
-        // Limpieza para el sistema de logos (quita espacios, http, etc)
-        let siteClean = siteInput.toLowerCase()
-                                 .replace(/^https?:\/\//, '')
-                                 .replace(/\/$/, '')
-                                 .replace(/\s+/g, ''); 
-        
-        if(siteClean && !siteClean.includes('.')) siteClean += ".com";
-        
-        const user = document.getElementById('userName').value.trim();
+    // CRUD - Crear en la Nube
+    async function addEntry() {
+        let site = document.getElementById('siteDomain').value;
+        const username = document.getElementById('userName').value;
         const pass = document.getElementById('passwordSave').value;
-        
-        if(!siteInput || !user || !pass) return alert("Por favor completa todos los campos.");
+
+        if(!site || !username || !pass) return alert("Faltan datos");
+
+        site = site.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        if (!site.includes('.')) site += ".com";
 
         try {
-            // Objeto a guardar
-            const dataToSave = {
-                site: siteClean,       // Para lógica interna y logos
-                displaySite: siteInput, // Lo que escribió el usuario (visual)
-                username: user, 
-                pass: pass, 
+            await db.collection('users').doc(currentUser.uid).collection('passwords').add({
+                site, username, pass,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            if (editingId) {
-                // --- MODO EDICIÓN (UPDATE) ---
-                await db.collection('users').doc(currentUser.uid).collection('passwords').doc(editingId).update({
-                    site: siteClean,
-                    displaySite: siteInput,
-                    username: user,
-                    pass: pass
-                });
-                showMsg("¡Registro Actualizado!");
-                cancelEdit(); 
-            } else {
-                // --- MODO CREACIÓN (CREATE) ---
-                await db.collection('users').doc(currentUser.uid).collection('passwords').add(dataToSave);
-                showMsg("¡Guardado en la Nube!");
-                
-                // Limpiar formulario solo si guardamos nuevo
-                document.getElementById('siteDomain').value = "";
-                document.getElementById('userName').value = "";
-                document.getElementById('passwordSave').value = "";
-                document.getElementById('passwordResult').textContent = "---";
-            }
-        } catch(e) { 
-            console.error(e);
-            alert("Error al guardar: " + e.message); 
+            });
+            document.getElementById('siteDomain').value = "";
+            document.getElementById('userName').value = "";
+            document.getElementById('passwordSave').value = "";
+            document.getElementById('passwordResult').textContent = "---";
+            mostrarFeedback("Guardado en la Nube");
+        } catch (e) {
+            alert("Error: " + e.message);
         }
     }
 
-    // LEER DATOS EN TIEMPO REAL
-    function loadDataRealtime() {
-        // Escucha cambios en la base de datos
-        db.collection('users').doc(currentUser.uid).collection('passwords')
-        .onSnapshot(snap => {
-            localData = [];
-            snap.forEach(doc => {
-                // Guardamos ID y datos en un array local para poder ordenar
-                localData.push({ id: doc.id, ...doc.data() });
-            });
-            renderLocalData(); // Dibujar tabla
-        });
-    }
-
-    // DIBUJAR TABLA (RENDER)
-    function renderLocalData() {
+    // CRUD - Leer en tiempo real
+    function loadData() {
         const tbody = document.getElementById('tableBody');
         const showLogos = document.getElementById('logoSwitch').checked;
-        const sortType = document.getElementById('sortSelect').value;
 
-        // --- LÓGICA DE ORDENAMIENTO ---
-        if (sortType === 'date') {
-            // Ordenar por fecha (más reciente arriba)
-            localData.sort((a, b) => {
-                const timeA = a.createdAt ? a.createdAt.seconds : 0;
-                const timeB = b.createdAt ? b.createdAt.seconds : 0;
-                return timeB - timeA;
-            });
-        } else if (sortType === 'alpha') {
-            // Ordenar A-Z por nombre del sitio
-            localData.sort((a, b) => {
-                const nameA = (a.displaySite || a.site).toLowerCase();
-                const nameB = (b.displaySite || b.site).toLowerCase();
-                return nameA.localeCompare(nameB);
-            });
-        }
+        // Listener en tiempo real de Firebase
+        db.collection('users').doc(currentUser.uid).collection('passwords')
+          .orderBy('createdAt', 'desc')
+          .onSnapshot((snapshot) => {
+              tbody.innerHTML = ""; 
+              
+              if(snapshot.empty) {
+                  tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px;'>No hay datos guardados aún.</td></tr>";
+                  return;
+              }
 
-        tbody.innerHTML = "";
-        
-        if(localData.length === 0) {
-            tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:30px; color:#888;'>No tienes contraseñas guardadas aún.</td></tr>";
-            return;
-        }
+              snapshot.forEach(doc => {
+                  const data = doc.data();
+                  const row = document.createElement('tr');
+                  
+                  // Configuración de Logo
+                  const divSite = document.createElement('div');
+                  divSite.className = 'logo-cell';
+                  if (showLogos) {
+                      const img = document.createElement('img');
+                      img.src = `https://www.google.com/s2/favicons?domain=${data.site}&sz=64`;
+                      img.className = 'site-logo';
+                      img.onerror = function() { this.style.display='none'; };
+                      divSite.appendChild(img);
+                  } else {
+                      const icon = document.createElement('i');
+                      icon.className = 'fas fa-globe';
+                      divSite.appendChild(icon);
+                  }
+                  const spanSite = document.createElement('span');
+                  spanSite.textContent = data.site;
+                  divSite.appendChild(spanSite);
 
-        localData.forEach(d => {
-            const row = document.createElement('tr');
-            
-            // --- LÓGICA DE LOGOS (ESPECIAL PARA BANCOS) ---
-            let logoUrl = `https://www.google.com/s2/favicons?domain=${d.site}&sz=64`;
-            
-            // Logos manuales para casos difíciles
-            if (d.site.includes("nacional")) {
-                logoUrl = "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/5f/8c/29/5f8c290e-1aa1-090c-9900-502802802802/AppIcon-0-0-1x_U007emarketing-0-0-0-7-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/512x512bb.jpg";
-            }
-            if (d.site.includes("qik")) {
-                logoUrl = "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/7c/7c/7c/7c7c7c7c-7c7c-7c7c-7c7c-7c7c7c7c7c7c/AppIcon-0-0-1x_U007emarketing-0-0-0-7-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/512x512bb.jpg";
-            }
-
-            // Crear celda de logo
-            let logoHtml = '<i class="fas fa-globe" style="margin-right:10px"></i>';
-            if (showLogos) {
-                logoHtml = `<img src="${logoUrl}" class="site-logo" onerror="this.src='https://via.placeholder.com/32?text=?'">`;
-            }
-
-            // Usar displaySite si existe (lo que escribió el usuario), sino site
-            const nombreMostrar = d.displaySite || d.site;
-
-            row.innerHTML = `
-                <td>
-                    <div class="logo-cell">
-                        ${logoHtml}
-                        <span>${escapeHTML(nombreMostrar)}</span>
-                    </div>
-                </td>
-                <td>${escapeHTML(d.username)}</td>
-                <td>
-                    <span class="password-code" onclick="copiar('${d.pass}')" title="Haz clic para copiar">
-                        ****
-                    </span>
-                </td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="action-btn" onclick="copiar('${d.pass}')" title="Copiar Contraseña">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="action-btn edit-btn" onclick="startEdit('${d.id}', '${nombreMostrar}', '${escapeHTML(d.username)}', '${d.pass}')" title="Editar / Corregir">
-                            <i class="fas fa-pencil-alt"></i>
-                        </button>
-                        <button class="action-btn delete-btn" onclick="deleteEntry('${d.id}')" title="Eliminar Permanentemente">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
+                  row.innerHTML = `
+                      <td></td> <td>${escapeHTML(data.username)}</td>
+                      <td><span class="password-code" onclick="copiar('${data.pass}')" title="Copiar">${data.pass}</span></td>
+                      <td>
+                          <button class="action-btn" onclick="copiar('${data.pass}')"><i class="fas fa-copy"></i></button>
+                          <button class="action-btn delete-btn" onclick="deleteEntry('${doc.id}')"><i class="fas fa-trash"></i></button>
+                      </td>
+                  `;
+                  
+                  // Insertar la celda de logo generada
+                  row.cells[0].appendChild(divSite);
+                  
+                  tbody.appendChild(row);
+              });
+          });
     }
 
-    // BORRAR
+    // CRUD - Borrar
     async function deleteEntry(id) {
-        if(confirm("¿Estás seguro de borrar esta contraseña? No se podrá recuperar.")) {
+        if(confirm("¿Eliminar este registro de la nube?")) {
             await db.collection('users').doc(currentUser.uid).collection('passwords').doc(id).delete();
         }
     }
 
-    // ======================================================
-    // 7. FUNCIONES DE EDICIÓN
-    // ======================================================
-    
-    function startEdit(id, displaySite, username, pass) {
-        // Rellenar formulario con datos existentes
-        editingId = id;
-        document.getElementById('siteDomain').value = displaySite;
-        document.getElementById('userName').value = username;
-        document.getElementById('passwordSave').value = pass;
-        
-        // Cambiar apariencia del botón
-        const saveBtn = document.getElementById('saveBtn');
-        saveBtn.innerHTML = '<i class="fas fa-sync"></i> Actualizar Datos';
-        saveBtn.style.backgroundColor = 'var(--warning-color)';
-        
-        // Mostrar botón cancelar
-        document.getElementById('cancelEditBtn').style.display = 'block';
-        
-        // Cambiar título
-        document.getElementById('formTitle').innerHTML = `<i class="fas fa-pencil-alt"></i> Editando: ${displaySite}`;
-        
-        // Scroll suave hacia el formulario
-        document.querySelector('.section:nth-of-type(2)').scrollIntoView({ behavior: 'smooth' });
+    // --- UTILIDADES ---
+    function escapeHTML(str) {
+        if (!str) return "";
+        return str.replace(/[&<>'"]/g, tag => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[tag]));
     }
 
-    function cancelEdit() {
-        // Limpiar todo
-        editingId = null;
-        document.getElementById('siteDomain').value = "";
-        document.getElementById('userName').value = "";
-        document.getElementById('passwordSave').value = "";
-        
-        // Restaurar botones
-        const saveBtn = document.getElementById('saveBtn');
-        saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar en Nube';
-        saveBtn.style.backgroundColor = ''; // Volver al original CSS
-        
-        document.getElementById('cancelEditBtn').style.display = 'none';
-        document.getElementById('formTitle').innerHTML = '<i class="fas fa-save"></i> Guardar Datos';
+    function copiar(text) {
+        navigator.clipboard.writeText(text);
+        mostrarFeedback("Copiado al portapapeles");
     }
 
-    // ======================================================
-    // 8. LISTENERS UI
-    // ======================================================
-    
-    // Switch Tema
-    document.getElementById('themeSwitch').addEventListener('change', (e) => {
+    function mostrarFeedback(msg) {
+        const el = document.getElementById('feedbackMsg');
+        el.textContent = msg; el.classList.add('visible');
+        setTimeout(() => el.classList.remove('visible'), 2000);
+    }
+
+    // Listeners UI
+    const themeSwitch = document.getElementById('themeSwitch');
+    themeSwitch.addEventListener('change', (e) => {
         document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
     });
 
-    // Switch Logos
-    document.getElementById('logoSwitch').addEventListener('change', (e) => {
-        renderLocalData(); // Redibujar tabla
+    const logoSwitch = document.getElementById('logoSwitch');
+    logoSwitch.addEventListener('change', (e) => {
+        loadData(); // Recargar para mostrar/ocultar logos
     });
 
 </script>
