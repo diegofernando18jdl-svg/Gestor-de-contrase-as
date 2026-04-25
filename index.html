@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -344,8 +345,23 @@
     let currentUser = null;
     let localData = []; 
     let editingId = null;
+    let sessionMasterKey = ""; // MEMORIA VOLÁTIL PARA CIFRADO
 
     // --- UTILIDADES ---
+    function encrypt(text) {
+        if(!sessionMasterKey) return text;
+        return CryptoJS.AES.encrypt(text, sessionMasterKey).toString();
+    }
+
+    function decrypt(ciphertext) {
+        if(!sessionMasterKey) return "---";
+        try {
+            const bytes = CryptoJS.AES.decrypt(ciphertext, sessionMasterKey);
+            const originalText = bytes.toString(CryptoJS.enc.Utf8);
+            return originalText || "ERROR_KEY";
+        } catch(e) { return "ERROR_DEC"; }
+    }
+
     function togglePass(inputId, btn) {
         const input = document.getElementById(inputId);
         const icon = btn.querySelector('i');
@@ -408,9 +424,11 @@
         try {
             if (isRegisterMode) {
                 await auth.createUserWithEmailAndPassword(email, pass);
+                sessionMasterKey = pass; // CAPTURA LLAVE
                 alert("¡Cuenta creada con éxito!");
             } else {
                 await auth.signInWithEmailAndPassword(email, pass);
+                sessionMasterKey = pass; // CAPTURA LLAVE
             }
         } catch (error) {
             let msg = "Error desconocido.";
@@ -460,18 +478,20 @@
         
         if(!siteInput || !user || !pass) return alert("Por favor completa todos los campos.");
 
+        const encryptedPass = encrypt(pass); // CIFRADO
+
         try {
             const dataToSave = {
                 site: siteClean,
                 displaySite: siteInput, 
                 username: user, 
-                pass: pass, 
+                pass: encryptedPass, 
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             if (editingId) {
                 await db.collection('users').doc(currentUser.uid).collection('passwords').doc(editingId).update({
-                    site: siteClean, displaySite: siteInput, username: user, pass: pass
+                    site: siteClean, displaySite: siteInput, username: user, pass: encryptedPass
                 });
                 showMsg("¡Registro Actualizado!");
                 cancelEdit(); 
@@ -545,15 +565,16 @@
 
             const logoHtml = showLogos ? `<img src="${logoUrl}" class="site-logo" onerror="this.src='https://via.placeholder.com/32?text=?'">` : `<i class="fas fa-globe" style="margin-right:10px"></i>`;
             const nombreMostrar = d.displaySite || d.site;
+            const decryptedPass = decrypt(d.pass); // DESCIFRADO
 
             row.innerHTML = `
                 <td><div class="logo-cell">${logoHtml}<span>${escapeHTML(nombreMostrar)}</span></div></td>
                 <td>${escapeHTML(d.username)}</td>
-                <td><span class="password-code" title="Pasa el mouse para ver">${escapeHTML(d.pass)}</span></td>
+                <td><span class="password-code" title="Pasa el mouse para ver">${escapeHTML(decryptedPass)}</span></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn" onclick="copiar('${d.pass}')" title="Copiar"><i class="fas fa-copy"></i></button>
-                        <button class="action-btn edit-btn" onclick="startEdit('${d.id}', '${nombreMostrar}', '${escapeHTML(d.username)}', '${d.pass}')" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="action-btn" onclick="copiar('${escapeHTML(decryptedPass)}')" title="Copiar"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn edit-btn" onclick="startEdit('${d.id}', '${nombreMostrar}', '${escapeHTML(d.username)}', '${escapeHTML(decryptedPass)}')" title="Editar"><i class="fas fa-pencil-alt"></i></button>
                         <button class="action-btn delete-btn" onclick="deleteEntry('${d.id}')" title="Borrar"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
