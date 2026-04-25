@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Cloud Ultimate v2.1</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* --- ESTILOS VISUALES --- */
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f4f4f9;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --text-secondary: #555;
+            --border-color: #eee;
+            --input-bg: #fff;
+            --input-border: #ddd;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --row-hover: #f9f9f9;
+            --code-bg: #f8f9fa;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #ecf0f1;
+            --accent-color: #3498db;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-secondary: #aaa;
+            --border-color: #333;
+            --input-bg: #2d2d2d;
+            --input-border: #444;
+            --success-color: #2ecc71;
+            --warning-color: #f1c40f;
+            --danger-color: #c0392b;
+            --row-hover: #252525;
+            --code-bg: #2c2c2c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 850px; 
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+
+        /* --- LOGIN --- */
+        #login-screen { text-align: center; max-width: 420px; margin: 0 auto; padding-top: 20px; }
+        #app-screen { display: none; }
+        .login-icon { font-size: 4rem; color: var(--accent-color); margin-bottom: 20px; display: block; }
+        .link-text { margin-top: 20px; color: var(--accent-color); cursor: pointer; font-size: 0.95rem; display: inline-block; }
+        .link-text:hover { text-decoration: underline; }
+        .error-msg { color: var(--danger-color); margin-top: 15px; font-size: 0.9rem; min-height: 20px; }
+
+        /* --- INPUTS --- */
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--primary-color); font-size: 0.9rem; }
+        input[type="text"], input[type="number"], input[type="email"], input[type="password"], select {
+            width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid var(--input-border);
+            border-radius: 8px; box-sizing: border-box; background-color: var(--input-bg);
+            color: var(--text-color); font-size: 1rem; transition: 0.3s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+
+        .password-input-wrapper { position: relative; display: flex; align-items: center; margin-bottom: 20px; }
+        .password-input-wrapper input { margin-bottom: 0; padding-right: 45px; }
+        .toggle-password-btn {
+            position: absolute; right: 12px; background: none; border: none;
+            color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; padding: 5px; width: auto;
+        }
+        .toggle-password-btn:hover { color: var(--accent-color); }
+
+        /* --- BOTONES --- */
+        button {
+            background-color: var(--accent-color); color: white; border: none; padding: 12px 24px;
+            border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; width: 100%;
+            transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        #cancelEditBtn { background-color: #7f8c8d; margin-top: 10px; display: none; }
+
+        /* --- CABECERA --- */
+        .header-row {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;
+            flex-wrap: wrap; gap: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 1rem;
+        }
+        h2 { margin: 0; color: var(--primary-color); display: flex; align-items: center; gap: 12px; font-size: 1.8rem; }
+        .top-controls { display: flex; gap: 15px; align-items: center; }
+
+        /* Switches */
+        .switch-group { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-size: 0.9rem; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { display: none; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* --- SECCIONES --- */
+        .section {
+            margin-bottom: 2.5rem; padding: 1.5rem; background-color: var(--row-hover);
+            border-radius: 12px; border: 1px solid var(--border-color);
+        }
+        .section h3 { margin-top: 0; margin-bottom: 1rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .generator-box { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
+        .result-box {
+            background: var(--code-bg); padding: 15px; border-radius: 8px; font-family: monospace;
+            font-size: 1.2rem; text-align: center; margin: 15px 0; letter-spacing: 2px;
+            border: 2px dashed var(--border-color); color: var(--accent-color); word-break: break-all;
+        }
+
+        /* --- TABLA --- */
+        .sort-control { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .sort-select { width: auto; margin-bottom: 0; padding: 8px 15px; font-size: 0.9rem; background-color: var(--card-bg); }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        th { text-align: left; padding: 12px 15px; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        td {
+            background: var(--input-bg); padding: 15px; vertical-align: middle;
+            border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+            color: var(--text-color); transition: background-color 0.2s;
+        }
+        td:first-child { border-left: 1px solid var(--border-color); border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+        td:last-child { border-right: 1px solid var(--border-color); border-top-right-radius: 10px; border-bottom-right-radius: 10px; text-align: right; }
+
+        .logo-cell { display: flex; align-items: center; gap: 12px; font-weight: bold; font-size: 1rem; }
+        .site-logo {
+            width: 32px; height: 32px; border-radius: 8px; object-fit: contain;
+            background: white; padding: 2px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* --- ESTILO DE CONTRASEÑA CON EFECTO HOVER --- */
+        .password-code {
+            background: var(--code-bg);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: var(--accent-color);
+            border: 1px solid var(--border-color);
+            cursor: text;
+            transition: all 0.3s ease;
+            
+            /* EFECTO BORROSO POR DEFECTO */
+            filter: blur(5px);
+            user-select: none; /* Evita selección accidental cuando está borroso */
+        }
+        
+        /* EFECTO NÍTIDO AL PASAR EL MOUSE */
+        .password-code:hover {
+            filter: blur(0);
+            user-select: text; /* Permite seleccionar al verla */
+            background-color: var(--card-bg);
+            border-color: var(--accent-color);
+        }
+
+        .action-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+        .action-btn {
+            background-color: transparent; color: var(--text-secondary); border: 1px solid var(--border-color);
+            width: 36px; height: 36px; padding: 0; border-radius: 8px; display: inline-flex;
+            align-items: center; justify-content: center; margin: 0; transition: all 0.2s;
+        }
+        .action-btn:hover { background-color: var(--row-hover); color: var(--accent-color); transform: scale(1.05); }
+        .edit-btn:hover { color: var(--warning-color); border-color: var(--warning-color); background-color: rgba(243, 156, 18, 0.1); }
+        .delete-btn:hover { color: var(--danger-color); border-color: var(--danger-color); background-color: rgba(231, 76, 60, 0.1); }
+
+        .user-badge { background: var(--accent-color); color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        .copy-feedback { text-align: center; color: var(--success-color); font-weight: bold; font-size: 0.9rem; height: 20px; opacity: 0; transition: opacity 0.3s; margin-top: 5px; }
+        .copy-feedback.visible { opacity: 1; }
+
+        @media (max-width: 600px) {
+            .container { padding: 1.5rem; }
+            th, td { padding: 10px 5px; font-size: 0.85rem; }
+            .action-btn { width: 30px; height: 30px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .top-controls { width: 100%; justify-content: space-between; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div id="login-screen">
+        <i class="fas fa-fingerprint login-icon"></i>
+        <h2 id="auth-title" style="justify-content: center;">Iniciar Sesión</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 30px;">Tu bóveda segura en la nube</p>
+        
+        <label style="text-align: left;">Correo Electrónico</label>
+        <input type="email" id="auth-email" placeholder="ejemplo@correo.com">
+        
+        <label style="text-align: left;">Contraseña Maestra</label>
+        <div class="password-input-wrapper">
+            <input type="password" id="auth-password" placeholder="••••••••">
+            <button type="button" class="toggle-password-btn" onclick="togglePass('auth-password', this)">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+        
+        <button onclick="handleAuth()" id="auth-btn">Entrar a la Bóveda</button>
+        <div id="auth-error" class="error-msg"></div>
+
+        <!-- BOTÓN DE GOOGLE -->
+        <button
+          onClick="signInWithGoogle()"
+          style="display: flex; align-items: center; justify-content: center; background-color: white; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transform: scale(1); transition: all 0.2s; border: 1px solid #ddd; margin: 20px auto; cursor: pointer; padding: 10px; width: 50px; height: 50px;"
+          title="Iniciar sesión con Google"
+        >
+          <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+        </button>
+
+        <div class="link-text" onclick="toggleAuth()" id="toggle-text">
+            ¿No tienes cuenta? <b>Regístrate gratis aquí</b>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        <div class="header-row">
+            <h2><i class="fas fa-shield-alt"></i> Gestor Cloud</h2>
+            <div class="top-controls">
+                <span id="user-display" class="user-badge">Usuario</span>
+                <div class="switch-group">
+                    <i class="fas fa-image" title="Mostrar Logos"></i>
+                    <label class="switch"><input type="checkbox" id="logoSwitch" checked><span class="slider round"></span></label>
+                </div>
+                <div class="switch-group">
+                    <i class="fas fa-moon" title="Modo Oscuro"></i>
+                    <label class="switch"><input type="checkbox" id="themeSwitch"><span class="slider round"></span></label>
+                </div>
+                <button onclick="logout()" style="width: auto; padding: 8px 15px; background: var(--danger-color); font-size: 0.9rem;" title="Cerrar Sesión">
+                    <i class="fas fa-sign-out-alt"></i>
+                 </button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-magic"></i> Generar Contraseña</h3>
+            <div class="generator-box">
+                 <input type="number" id="length" min="4" max="50" value="16" style="width: 80px; margin:0;">
+                 <div style="display:flex; align-items:center;">
+                    <input type="checkbox" id="useSymbols" checked style="width:auto; margin:0 8px 0 0;"> 
+                    <label for="useSymbols" style="margin:0; font-weight:normal;">Incluir Símbolos (!@#)</label>
+                </div>
+            </div>
+            <button onclick="generatePass()">Generar Nueva</button>
+            <div class="result-box" id="passwordResult">---</div>
+            <div class="copy-feedback" id="feedbackMsg">Copiado al portapapeles</div>
+        </div>
+
+        <div class="section">
+            <h3 id="formTitle"><i class="fas fa-save"></i> Guardar Datos</h3>
+            <label>Sitio Web / Servicio</label>
+            <input type="text" id="siteDomain" placeholder="Ej: Qik, La Nacional, Google, Netflix...">
+            <label>Usuario / Correo</label>
+            <input type="text" id="userName" placeholder="usuario@ejemplo.com">
+            <label>Contraseña</label>
+            <div class="password-input-wrapper">
+                <input type="password" id="passwordSave" placeholder="Escribe o genera una contraseña">
+                <button type="button" class="toggle-password-btn" onclick="togglePass('passwordSave', this)">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            <button onclick="saveEntry()" id="saveBtn"><i class="fas fa-cloud-upload-alt"></i> Guardar en Nube</button>
+            <button onclick="cancelEdit()" id="cancelEditBtn"><i class="fas fa-times"></i> Cancelar Edición</button>
+        </div>
+
+        <div>
+            <div class="sort-control">
+                <h3><i class="fas fa-list"></i> Mis Cuentas</h3>
+                <select id="sortSelect" class="sort-select" onchange="renderLocalData()">
+                    <option value="date">📅 Más Recientes</option>
+                    <option value="alpha">🔤 Alfabético (A-Z)</option>
+                </select>
+            </div>
+            
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th style="width: 30%">Servicio</th>
+                        <th style="width: 30%">Usuario</th>
+                        <th style="width: 25%">Pass (Hover)</th>
+                        <th style="width: 15%; text-align:right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. CREDENCIALES FIREBASE REALES (NO TOCAR) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAMMjFRkXNCV7jkgAukBdbEhL8elk8yHSA",
+      authDomain: "gestor-de-claves-90931.firebaseapp.com",
+      projectId: "gestor-de-claves-90931",
+      storageBucket: "gestor-de-claves-90931.firebasestorage.app",
+      messagingSenderId: "162138922448",
+      appId: "1:162138922448:web:c2fe68170c86ff089fadd5",
+      measurementId: "G-3VYEZV1D3N"
+    };
+
+    // Inicializar Firebase
+    try { 
+        firebase.initializeApp(firebaseConfig); 
+        console.log("Firebase conectado");
+    } catch(e) { 
+        console.error("Error conectando Firebase:", e); 
+    }
+    
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // --- VARIABLES ---
+    let isRegisterMode = false;
+    let currentUser = null;
+    let localData = []; 
+    let editingId = null;
+
+    // --- UTILIDADES ---
+    function togglePass(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const icon = btn.querySelector('i');
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = "password";
+            icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye');
+        }
+    }
+
+    function copiar(text) {
+        navigator.clipboard.writeText(text).then(() => showMsg("¡Copiado!"));
+    }
+
+    function showMsg(msg) {
+        const el = document.getElementById('feedbackMsg');
+        el.textContent = msg; el.classList.add('visible');
+        setTimeout(() => el.classList.remove('visible'), 2000);
+    }
+
+    function escapeHTML(str) { 
+        if (!str) return "";
+        return str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&quot;'}[t]));
+    }
+
+    // --- AUTH ---
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'block';
+            document.getElementById('user-display').textContent = user.email.split('@')[0];
+            loadDataRealtime();
+        } else {
+            currentUser = null;
+            document.getElementById('app-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'block';
+        }
+    });
+
+    function toggleAuth() {
+        isRegisterMode = !isRegisterMode;
+        document.getElementById('auth-title').innerText = isRegisterMode ? "Crear Nueva Cuenta" : "Iniciar Sesión";
+        document.getElementById('auth-btn').innerText = isRegisterMode ? "Registrarse Gratis" : "Entrar a la Bóveda";
+        const toggleText = document.getElementById('toggle-text');
+        toggleText.innerHTML = isRegisterMode ? "¿Ya tienes cuenta? <b>Inicia sesión aquí</b>" : "¿No tienes cuenta? <b>Regístrate gratis aquí</b>";
+        document.getElementById('auth-error').innerText = "";
+    }
+
+    async function handleAuth() {
+        const email = document.getElementById('auth-email').value;
+        const pass = document.getElementById('auth-password').value;
+        const errDisplay = document.getElementById('auth-error');
+        errDisplay.innerText = "";
+
+        if(!email || !pass) return errDisplay.innerText = "Por favor, rellena correo y contraseña.";
+
+        try {
+            if (isRegisterMode) {
+                await auth.createUserWithEmailAndPassword(email, pass);
+                alert("¡Cuenta creada con éxito!");
+            } else {
+                await auth.signInWithEmailAndPassword(email, pass);
+            }
+        } catch (error) {
+            let msg = "Error desconocido.";
+            if(error.code === 'auth/wrong-password') msg = "Contraseña incorrecta.";
+            if(error.code === 'auth/user-not-found') msg = "No existe cuenta con este correo.";
+            if(error.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado.";
+            errDisplay.innerText = msg;
+        }
+    }
+    function logout() { auth.signOut(); }
+
+    async function signInWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try {
+            await auth.signInWithPopup(provider);
+        } catch (error) {
+            console.error("Error al iniciar sesión con Google:", error);
+            document.getElementById('auth-error').innerText = "Error al conectar con Google.";
+        }
+    }
+
+    // --- GENERADOR ---
+    function generatePass() {
+        const len = parseInt(document.getElementById('length').value);
+        const sym = document.getElementById('useSymbols').checked;
+        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" + (sym ? "!@#$%^&*()_+" : "");
+        let retVal = "";
+        const array = new Uint32Array(len); window.crypto.getRandomValues(array);
+        for (let i = 0; i < len; i++) retVal += chars[array[i] % chars.length];
+        
+        document.getElementById('passwordResult').textContent = retVal;
+        document.getElementById('passwordSave').value = retVal;
+        document.getElementById('passwordSave').type = "text"; 
+        const btnIcon = document.querySelector('#passwordSave + button i');
+        if(btnIcon) { btnIcon.classList.remove('fa-eye'); btnIcon.classList.add('fa-eye-slash'); }
+        showMsg("¡Contraseña Generada!");
+    }
+
+    // --- CRUD ---
+    async function saveEntry() {
+        let siteInput = document.getElementById('siteDomain').value.trim();
+        let siteClean = siteInput.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, ''); 
+        if(siteClean && !siteClean.includes('.')) siteClean += ".com";
+        
+        const user = document.getElementById('userName').value.trim();
+        const pass = document.getElementById('passwordSave').value;
+        
+        if(!siteInput || !user || !pass) return alert("Por favor completa todos los campos.");
+
+        try {
+            const dataToSave = {
+                site: siteClean,
+                displaySite: siteInput, 
+                username: user, 
+                pass: pass, 
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (editingId) {
+                await db.collection('users').doc(currentUser.uid).collection('passwords').doc(editingId).update({
+                    site: siteClean, displaySite: siteInput, username: user, pass: pass
+                });
+                showMsg("¡Registro Actualizado!");
+                cancelEdit(); 
+            } else {
+                await db.collection('users').doc(currentUser.uid).collection('passwords').add(dataToSave);
+                showMsg("¡Guardado en la Nube!");
+                document.getElementById('siteDomain').value = "";
+                document.getElementById('userName').value = "";
+                document.getElementById('passwordSave').value = "";
+            }
+        } catch(e) { alert("Error al guardar: " + e.message); }
+    }
+
+    function startEdit(id, displaySite, username, pass) {
+        editingId = id;
+        document.getElementById('siteDomain').value = displaySite;
+        document.getElementById('userName').value = username;
+        document.getElementById('passwordSave').value = pass;
+        
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.innerHTML = '<i class="fas fa-sync"></i> Actualizar Datos';
+        saveBtn.style.backgroundColor = 'var(--warning-color)';
+        document.getElementById('cancelEditBtn').style.display = 'block';
+        document.getElementById('formTitle').innerHTML = `<i class="fas fa-pencil-alt"></i> Editando: ${displaySite}`;
+        document.querySelector('.section:nth-of-type(2)').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+        editingId = null;
+        document.getElementById('siteDomain').value = "";
+        document.getElementById('userName').value = "";
+        document.getElementById('passwordSave').value = "";
+        
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar en Nube';
+        saveBtn.style.backgroundColor = '';
+        document.getElementById('cancelEditBtn').style.display = 'none';
+        document.getElementById('formTitle').innerHTML = '<i class="fas fa-save"></i> Guardar Datos';
+    }
+
+    // --- CARGA ---
+    function loadDataRealtime() {
+        db.collection('users').doc(currentUser.uid).collection('passwords')
+        .onSnapshot(snap => {
+            localData = [];
+            snap.forEach(doc => { localData.push({ id: doc.id, ...doc.data() }); });
+            renderLocalData();
+        });
+    }
+
+    function renderLocalData() {
+        const tbody = document.getElementById('tableBody');
+        const showLogos = document.getElementById('logoSwitch').checked;
+        const sortType = document.getElementById('sortSelect').value;
+
+        if (sortType === 'date') {
+            localData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        } else if (sortType === 'alpha') {
+            localData.sort((a, b) => (a.displaySite || a.site).localeCompare(b.displaySite || b.site));
+        }
+
+        tbody.innerHTML = "";
+        if(localData.length === 0) return tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:30px; color:#888;'>No tienes contraseñas guardadas aún.</td></tr>";
+
+        localData.forEach(d => {
+            const row = document.createElement('tr');
+            
+            let logoUrl = `https://www.google.com/s2/favicons?domain=${d.site}&sz=64`;
+            if (d.site.includes("nacional")) logoUrl = "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/5f/8c/29/5f8c290e-1aa1-090c-9900-502802802802/AppIcon-0-0-1x_U007emarketing-0-0-0-7-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/512x512bb.jpg";
+            if (d.site.includes("qik")) logoUrl = "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/7c/7c/7c/7c7c7c7c-7c7c-7c7c-7c7c-7c7c7c7c7c7c/AppIcon-0-0-1x_U007emarketing-0-0-0-7-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/512x512bb.jpg";
+
+            const logoHtml = showLogos ? `<img src="${logoUrl}" class="site-logo" onerror="this.src='https://via.placeholder.com/32?text=?'">` : `<i class="fas fa-globe" style="margin-right:10px"></i>`;
+            const nombreMostrar = d.displaySite || d.site;
+
+            row.innerHTML = `
+                <td><div class="logo-cell">${logoHtml}<span>${escapeHTML(nombreMostrar)}</span></div></td>
+                <td>${escapeHTML(d.username)}</td>
+                <td><span class="password-code" title="Pasa el mouse para ver">${escapeHTML(d.pass)}</span></td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="copiar('${d.pass}')" title="Copiar"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn edit-btn" onclick="startEdit('${d.id}', '${nombreMostrar}', '${escapeHTML(d.username)}', '${d.pass}')" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="action-btn delete-btn" onclick="deleteEntry('${d.id}')" title="Borrar"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    async function deleteEntry(id) {
+        if(confirm("¿Estás seguro de borrar esta contraseña?")) await db.collection('users').doc(currentUser.uid).collection('passwords').doc(id).delete();
+    }
+
+    document.getElementById('themeSwitch').addEventListener('change', e => document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light'));
+    document.getElementById('logoSwitch').addEventListener('change', renderLocalData);
+</script>
+</body>
+</html>
