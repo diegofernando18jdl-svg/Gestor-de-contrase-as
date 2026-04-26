@@ -263,9 +263,6 @@
             <h2><i class="fas fa-shield-alt"></i> Gestor Cloud</h2>
             <div class="top-controls">
                 <span id="user-display" class="user-badge">Usuario</span>
-                <button id="mfa-enroll-btn" onclick="enrollMFA()" style="width: auto; padding: 8px 15px; background: var(--success-color); font-size: 0.8rem; display: none;" title="Activar Doble Factor">
-                    <i class="fas fa-shield-alt"></i> Activar 2FA
-                </button>
                 <div class="switch-group">
                     <i class="fas fa-image" title="Mostrar Logos"></i>
                     <label class="switch"><input type="checkbox" id="logoSwitch" checked><span class="slider round"></span></label>
@@ -277,6 +274,36 @@
                 <button onclick="logout()" style="width: auto; padding: 8px 15px; background: var(--danger-color); font-size: 0.9rem;" title="Cerrar Sesión">
                     <i class="fas fa-sign-out-alt"></i>
                  </button>
+            </div>
+        </div>
+
+        <div id="mfa-enroll-panel" class="section" style="display: none; border: 2px solid var(--success-color); padding: 2rem; border-radius: 16px; background-color: var(--card-bg); text-align: center; margin-bottom: 2.5rem;">
+            <h3 style="margin-top:0; border:none; color: var(--success-color);"><i class="fas fa-shield-alt"></i> Blindaje de Seguridad</h3>
+            
+            <!-- Paso 0: Botón Inicial -->
+            <div id="enroll-step-0">
+                <button onclick="setEnrollStep(1)" style="background-color: var(--success-color); padding: 15px;">
+                    Vincular Teléfono (Requerido 2FA)
+                </button>
+            </div>
+            
+            <!-- Paso 1: Pedir Teléfono -->
+            <div id="enroll-step-1" style="display: none; text-align: left;">
+                <label>Número de Teléfono (con código de país):</label>
+                <input type="text" id="enroll-phone" value="+18099415112" style="margin-bottom: 15px;">
+                <button onclick="startEnrollment()" style="background-color: var(--accent-color);">
+                    Enviar SMS de Código
+                </button>
+                <div id="mfa-enroll-recaptcha" style="margin-top: 10px;"></div>
+            </div>
+
+            <!-- Paso 2: Pedir SMS -->
+            <div id="enroll-step-2" style="display: none; text-align: left;">
+                <label>Código SMS de 6 dígitos:</label>
+                <input type="text" id="enroll-sms" placeholder="Ej: 123456" maxlength="6" style="text-align: center; letter-spacing: 5px; font-weight: bold;">
+                <button onclick="verifyEnrollment()" style="background-color: var(--success-color);">
+                    Verificar y Activar 2FA
+                </button>
             </div>
         </div>
 
@@ -428,12 +455,12 @@
             document.getElementById('app-screen').style.display = 'block';
             document.getElementById('user-display').textContent = user.email.split('@')[0];
             
-            // MOSTRAR BOTÓN SI NO TIENE MFA
-            const mfaBtn = document.getElementById('mfa-enroll-btn');
+            // MOSTRAR PANEL SI NO TIENE MFA
+            const mfaPanel = document.getElementById('mfa-enroll-panel');
             if (user.multiFactor && user.multiFactor.enrolledFactors.length > 0) {
-                mfaBtn.style.display = 'none';
+                mfaPanel.style.display = 'none';
             } else {
-                mfaBtn.style.display = 'inline-block';
+                mfaPanel.style.display = 'block';
             }
             
             loadDataRealtime();
@@ -541,35 +568,51 @@
         }
     }
 
-    async function enrollMFA() {
-        const user = firebase.auth().currentUser;
-        if (!user) return alert("Debes iniciar sesión primero");
+    // --- MFA ENROLLMENT (Refactored) ---
+    let enrollVerificationId = "";
 
-        const phoneNumber = prompt("Ingresa tu número de teléfono para activar el 2FA (Ej: +18099415112):");
-        if (!phoneNumber) return;
+    function setEnrollStep(step) {
+        document.getElementById('enroll-step-0').style.display = step === 0 ? 'block' : 'none';
+        document.getElementById('enroll-step-1').style.display = step === 1 ? 'block' : 'none';
+        document.getElementById('enroll-step-2').style.display = step === 2 ? 'block' : 'none';
+    }
+
+    async function startEnrollment() {
+        const phone = document.getElementById('enroll-phone').value;
+        if(!phone) return alert("Ingresa un número de teléfono.");
 
         if (!window.recaptchaVerifierEnroll) {
-            window.recaptchaVerifierEnroll = new firebase.auth.RecaptchaVerifier('mfa-enroll-recaptcha', { size: 'invisible' });
+            window.recaptchaVerifierEnroll = new firebase.auth.RecaptchaVerifier('mfa-enroll-recaptcha', { 'size': 'invisible' });
         }
 
         try {
+            const user = firebase.auth().currentUser;
             const session = await user.multiFactor.getSession();
-            const phoneInfoOptions = { phoneNumber, session };
+            const phoneInfoOptions = { phoneNumber: phone, session };
             const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
             
-            const verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifierEnroll);
-            const smsCode = prompt("Ingresa el código de 6 dígitos que recibiste por SMS:");
-            
-            if (smsCode) {
-                const cred = firebase.auth.PhoneAuthProvider.credential(verificationId, smsCode);
-                const multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
-                await user.multiFactor.enroll(multiFactorAssertion, "Teléfono Personal");
-                alert("✅ Doble Factor (MFA) activado con éxito. Ahora tu base de datos está desbloqueada.");
-                window.location.reload();
-            }
+            enrollVerificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifierEnroll);
+            setEnrollStep(2); // Avanzar a pedir SMS
         } catch (error) {
-            console.error("Error en inscripción MFA:", error);
-            alert(`❌ Error al activar 2FA: ${error.message}`);
+            console.error("Error al enviar SMS:", error);
+            alert("Error: " + error.message);
+            if (window.recaptchaVerifierEnroll) window.recaptchaVerifierEnroll.clear();
+        }
+    }
+
+    async function verifyEnrollment() {
+        const smsCode = document.getElementById('enroll-sms').value;
+        if(!smsCode) return alert("Ingresa el código de 6 dígitos.");
+
+        try {
+            const user = firebase.auth().currentUser;
+            const cred = firebase.auth.PhoneAuthProvider.credential(enrollVerificationId, smsCode);
+            const multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+            await user.multiFactor.enroll(multiFactorAssertion, "Teléfono Personal");
+            alert("✅ MFA Activado. Base de datos desbloqueada.");
+            window.location.reload();
+        } catch (error) {
+            alert("❌ Código incorrecto o error de servidor: " + error.message);
         }
     }
 
