@@ -504,24 +504,11 @@
                 };
                 const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
 
-                // 1. Limpiar cualquier verificador fantasma de intentos anteriores
-                if (window.recaptchaVerifier) {
-                    window.recaptchaVerifier.clear();
-                    window.recaptchaVerifier = null;
+                if (!window.recaptchaVerifier) {
+                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-login-mfa', { 
+                        size: 'invisible' 
+                    });
                 }
-
-                // 2. Crear o recuperar el contenedor directamente en el DOM
-                let recaptchaNode = document.getElementById("recaptcha-container-mfa");
-                if (!recaptchaNode) {
-                    recaptchaNode = document.createElement("div");
-                    recaptchaNode.id = "recaptcha-container-mfa";
-                    document.body.appendChild(recaptchaNode);
-                }
-
-                // 3. Inicializar pasando el NODO FÍSICO (recaptchaNode), NO un string
-                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(recaptchaNode, { 
-                    size: 'invisible' 
-                });
                 
                 try {
                     verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
@@ -559,24 +546,11 @@
                 };
                 const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
 
-                // 1. Limpiar cualquier verificador fantasma de intentos anteriores
-                if (window.recaptchaVerifier) {
-                    window.recaptchaVerifier.clear();
-                    window.recaptchaVerifier = null;
+                if (!window.recaptchaVerifier) {
+                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-login-mfa', { 
+                        size: 'invisible' 
+                    });
                 }
-
-                // 2. Crear o recuperar el contenedor directamente en el DOM
-                let recaptchaNode = document.getElementById("recaptcha-container-mfa");
-                if (!recaptchaNode) {
-                    recaptchaNode = document.createElement("div");
-                    recaptchaNode.id = "recaptcha-container-mfa";
-                    document.body.appendChild(recaptchaNode);
-                }
-
-                // 3. Inicializar pasando el NODO FÍSICO (recaptchaNode), NO un string
-                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(recaptchaNode, { 
-                    size: 'invisible' 
-                });
                 
                 try {
                     verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
@@ -823,6 +797,9 @@
     document.getElementById('themeSwitch').addEventListener('change', e => document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light'));
     document.getElementById('logoSwitch').addEventListener('change', renderLocalData);
 </script>
+
+<!-- RECAPTCHA INCONDICIONAL (Previene Race Conditions) -->
+<div id="recaptcha-login-mfa"></div>
 
 </body>
 </html>
