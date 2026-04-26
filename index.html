@@ -594,13 +594,13 @@
         console.log("🛠️ 1. Iniciando inscripción. Verificando contenedor reCAPTCHA");
 
         try {
-            if (!window.recaptchaVerifierEnroll) {
-                window.recaptchaVerifierEnroll = new firebase.auth.RecaptchaVerifier('mfa-enroll-recaptcha', { 
-                    'size': 'normal',
-                    'callback': () => console.log("✅ reCAPTCHA resuelto por el usuario")
-                });
-                window.recaptchaVerifierEnroll.render();
-            }
+      if (!window.recaptchaVerifier) {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'mfa-enroll-recaptcha', { 
+          'size': 'normal',
+          'callback': () => console.log("✅ reCAPTCHA resuelto por el usuario")
+        });
+        window.recaptchaVerifier.render();
+      }
 
             console.log("🔐 2. Solicitando sesión MFA de Firebase");
             const user = firebase.auth().currentUser;
@@ -609,7 +609,7 @@
             const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
             
             console.log("🛰️ 3. Ejecutando reCAPTCHA y solicitando envío de SMS");
-            enrollVerificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifierEnroll);
+            enrollVerificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
             
             console.log("✅ 4. SMS enviado con éxito. ID de verificación obtenido.");
             setEnrollStep(2); 
