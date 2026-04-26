@@ -291,10 +291,9 @@
             <div id="enroll-step-1" style="display: none; text-align: left;">
                 <label>Número de Teléfono (con código de país):</label>
                 <input type="text" id="enroll-phone" value="+18099415112" style="margin-bottom: 15px;">
-                <button onclick="startEnrollment()" style="background-color: var(--accent-color);">
+                <button id="start-enroll-btn" onclick="startEnrollment()" style="background-color: var(--accent-color);">
                     Enviar SMS de Código
                 </button>
-                <div id="mfa-enroll-recaptcha" style="margin-top: 10px;"></div>
             </div>
 
             <!-- Paso 2: Pedir SMS -->
@@ -305,6 +304,9 @@
                     Verificar y Activar 2FA
                 </button>
             </div>
+
+            <!-- CONTENEDOR RECAPTCHA ESTABLE (AFUERA DE LOS PASOS) -->
+            <div id="mfa-enroll-recaptcha" style="margin-top: 10px;"></div>
         </div>
 
         <div class="section">
@@ -568,8 +570,9 @@
         }
     }
 
-    // --- MFA ENROLLMENT (Refactored) ---
+    // --- MFA ENROLLMENT (Refactored with Trazability) ---
     let enrollVerificationId = "";
+    let isEnrollLoading = false;
 
     function setEnrollStep(step) {
         document.getElementById('enroll-step-0').style.display = step === 0 ? 'block' : 'none';
@@ -578,25 +581,45 @@
     }
 
     async function startEnrollment() {
+        if(isEnrollLoading) return;
+        
         const phone = document.getElementById('enroll-phone').value;
+        const btn = document.getElementById('start-enroll-btn');
+        
         if(!phone) return alert("Ingresa un número de teléfono.");
 
-        if (!window.recaptchaVerifierEnroll) {
-            window.recaptchaVerifierEnroll = new firebase.auth.RecaptchaVerifier('mfa-enroll-recaptcha', { 'size': 'invisible' });
-        }
+        isEnrollLoading = true;
+        btn.disabled = true;
+        btn.innerText = "Procesando seguridad...";
+        console.log("🛠️ 1. Iniciando inscripción. Verificando contenedor reCAPTCHA");
 
         try {
+            if (!window.recaptchaVerifierEnroll) {
+                window.recaptchaVerifierEnroll = new firebase.auth.RecaptchaVerifier('mfa-enroll-recaptcha', { 'size': 'invisible' });
+            }
+
+            console.log("🔐 2. Solicitando sesión MFA de Firebase");
             const user = firebase.auth().currentUser;
             const session = await user.multiFactor.getSession();
             const phoneInfoOptions = { phoneNumber: phone, session };
             const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
             
+            console.log("🛰️ 3. Ejecutando reCAPTCHA y solicitando envío de SMS");
             enrollVerificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifierEnroll);
-            setEnrollStep(2); // Avanzar a pedir SMS
+            
+            console.log("✅ 4. SMS enviado con éxito. ID de verificación obtenido.");
+            setEnrollStep(2); 
         } catch (error) {
-            console.error("Error al enviar SMS:", error);
-            alert("Error: " + error.message);
-            if (window.recaptchaVerifierEnroll) window.recaptchaVerifierEnroll.clear();
+            console.error("❌ ERROR CRÍTICO EN FIREBASE MFA:", error);
+            alert("Error al enviar: " + error.message);
+            if (window.recaptchaVerifierEnroll) {
+                window.recaptchaVerifierEnroll.clear();
+                window.recaptchaVerifierEnroll = null;
+            }
+        } finally {
+            isEnrollLoading = false;
+            btn.disabled = false;
+            btn.innerText = "Enviar SMS de Código";
         }
     }
 
