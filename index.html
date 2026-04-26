@@ -202,6 +202,7 @@
     </style>
 </head>
 <body>
+    <div id="recaptcha-container"></div>
 
 <div class="container">
 
@@ -505,7 +506,7 @@
                 const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
 
                 if (!window.recaptchaVerifier) {
-                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-login-mfa', { 
+                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 
                         size: 'invisible' 
                     });
                 }
@@ -547,7 +548,7 @@
                 const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
 
                 if (!window.recaptchaVerifier) {
-                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-login-mfa', { 
+                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 
                         size: 'invisible' 
                     });
                 }
@@ -797,9 +798,6 @@
     document.getElementById('themeSwitch').addEventListener('change', e => document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light'));
     document.getElementById('logoSwitch').addEventListener('change', renderLocalData);
 </script>
-
-<!-- RECAPTCHA INCONDICIONAL (Previene Race Conditions) -->
-<div id="recaptcha-login-mfa"></div>
 
 </body>
 </html>
