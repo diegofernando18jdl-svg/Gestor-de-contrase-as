@@ -595,7 +595,11 @@
 
         try {
             if (!window.recaptchaVerifierEnroll) {
-                window.recaptchaVerifierEnroll = new firebase.auth.RecaptchaVerifier('mfa-enroll-recaptcha', { 'size': 'invisible' });
+                window.recaptchaVerifierEnroll = new firebase.auth.RecaptchaVerifier('mfa-enroll-recaptcha', { 
+                    'size': 'normal',
+                    'callback': () => console.log("✅ reCAPTCHA resuelto por el usuario")
+                });
+                window.recaptchaVerifierEnroll.render();
             }
 
             console.log("🔐 2. Solicitando sesión MFA de Firebase");
