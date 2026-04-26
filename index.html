@@ -254,10 +254,6 @@
         </div>
     </div>
 
-    <!-- RECAPTCHA CONTAINER -->
-    <div id="recaptcha-container"></div>
-    <div id="mfa-enroll-recaptcha"></div>
-
     <div id="app-screen">
         <div class="header-row">
             <h2><i class="fas fa-shield-alt"></i> Gestor Cloud</h2>
@@ -516,8 +512,11 @@
                 } catch (smsError) {
                     console.error("Error enviando SMS:", smsError);
                     errDisplay.innerText = "Error al enviar código MFA.";
-                }
-            } else {
+                    if (window.recaptchaVerifier) {
+                        window.recaptchaVerifier.clear();
+                        window.recaptchaVerifier = null;
+                    }
+                }            } else {
                 let msg = "Error desconocido.";
                 if(error.code === 'auth/wrong-password') msg = "Contraseña incorrecta.";
                 if(error.code === 'auth/user-not-found') msg = "No existe cuenta con este correo.";
@@ -548,8 +547,11 @@
                     document.getElementById('mfa-screen').style.display = 'block';
                 } catch (smsError) {
                     document.getElementById('auth-error').innerText = "Error al enviar código MFA.";
-                }
-            } else {
+                    if (window.recaptchaVerifier) {
+                        window.recaptchaVerifier.clear();
+                        window.recaptchaVerifier = null;
+                    }
+                }            } else {
                 console.error("Error al iniciar sesión con Google:", error);
                 document.getElementById('auth-error').innerText = "Error al conectar con Google.";
             }
@@ -783,5 +785,10 @@
     document.getElementById('themeSwitch').addEventListener('change', e => document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light'));
     document.getElementById('logoSwitch').addEventListener('change', renderLocalData);
 </script>
+
+<!-- RECAPTCHA CONTAINERS (Root level) -->
+<div id="recaptcha-container"></div>
+<div id="mfa-enroll-recaptcha"></div>
+
 </body>
 </html>
