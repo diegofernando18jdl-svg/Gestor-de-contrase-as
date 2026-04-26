@@ -503,6 +503,16 @@
                     session: mfaResolver.session
                 };
                 const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+
+                if (!document.getElementById("recaptcha-container")) {
+                  const recaptchaDiv = document.createElement("div");
+                  recaptchaDiv.id = "recaptcha-container";
+                  document.body.appendChild(recaptchaDiv);
+                }
+
+                if (!window.recaptchaVerifier) {
+                  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+                }
                 
                 try {
                     verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
@@ -539,6 +549,16 @@
                     session: mfaResolver.session
                 };
                 const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+
+                if (!document.getElementById("recaptcha-container")) {
+                  const recaptchaDiv = document.createElement("div");
+                  recaptchaDiv.id = "recaptcha-container";
+                  document.body.appendChild(recaptchaDiv);
+                }
+
+                if (!window.recaptchaVerifier) {
+                  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+                }
                 
                 try {
                     verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
@@ -785,10 +805,6 @@
     document.getElementById('themeSwitch').addEventListener('change', e => document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light'));
     document.getElementById('logoSwitch').addEventListener('change', renderLocalData);
 </script>
-
-<!-- RECAPTCHA CONTAINERS (Root level) -->
-<div id="recaptcha-container"></div>
-<div id="mfa-enroll-recaptcha"></div>
 
 </body>
 </html>
