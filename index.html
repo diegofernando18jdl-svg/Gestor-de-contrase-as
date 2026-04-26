@@ -256,12 +256,16 @@
 
     <!-- RECAPTCHA CONTAINER -->
     <div id="recaptcha-container"></div>
+    <div id="mfa-enroll-recaptcha"></div>
 
     <div id="app-screen">
         <div class="header-row">
             <h2><i class="fas fa-shield-alt"></i> Gestor Cloud</h2>
             <div class="top-controls">
                 <span id="user-display" class="user-badge">Usuario</span>
+                <button id="mfa-enroll-btn" onclick="enrollMFA()" style="width: auto; padding: 8px 15px; background: var(--success-color); font-size: 0.8rem; display: none;" title="Activar Doble Factor">
+                    <i class="fas fa-shield-alt"></i> Activar 2FA
+                </button>
                 <div class="switch-group">
                     <i class="fas fa-image" title="Mostrar Logos"></i>
                     <label class="switch"><input type="checkbox" id="logoSwitch" checked><span class="slider round"></span></label>
@@ -423,6 +427,15 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'block';
             document.getElementById('user-display').textContent = user.email.split('@')[0];
+            
+            // MOSTRAR BOTÓN SI NO TIENE MFA
+            const mfaBtn = document.getElementById('mfa-enroll-btn');
+            if (user.multiFactor && user.multiFactor.enrolledFactors.length > 0) {
+                mfaBtn.style.display = 'none';
+            } else {
+                mfaBtn.style.display = 'inline-block';
+            }
+            
             loadDataRealtime();
         } else {
             currentUser = null;
@@ -525,6 +538,38 @@
             alert("✅ Identidad verificada. Acceso Concedido.");
         } catch (error) {
             alert("❌ Código SMS incorrecto o expirado.");
+        }
+    }
+
+    async function enrollMFA() {
+        const user = firebase.auth().currentUser;
+        if (!user) return alert("Debes iniciar sesión primero");
+
+        const phoneNumber = prompt("Ingresa tu número de teléfono para activar el 2FA (Ej: +18099415112):");
+        if (!phoneNumber) return;
+
+        if (!window.recaptchaVerifierEnroll) {
+            window.recaptchaVerifierEnroll = new firebase.auth.RecaptchaVerifier('mfa-enroll-recaptcha', { size: 'invisible' });
+        }
+
+        try {
+            const session = await user.multiFactor.getSession();
+            const phoneInfoOptions = { phoneNumber, session };
+            const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+            
+            const verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifierEnroll);
+            const smsCode = prompt("Ingresa el código de 6 dígitos que recibiste por SMS:");
+            
+            if (smsCode) {
+                const cred = firebase.auth.PhoneAuthProvider.credential(verificationId, smsCode);
+                const multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+                await user.multiFactor.enroll(multiFactorAssertion, "Teléfono Personal");
+                alert("✅ Doble Factor (MFA) activado con éxito. Ahora tu base de datos está desbloqueada.");
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error("Error en inscripción MFA:", error);
+            alert(`❌ Error al activar 2FA: ${error.message}`);
         }
     }
 
