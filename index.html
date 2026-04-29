@@ -488,18 +488,19 @@
                 site: siteClean,
                 displaySite: siteInput, 
                 username: user, 
-                pass: encryptedPass, 
+                pass: encryptedPass,
+                userId: currentUser.uid,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             if (editingId) {
-                await db.collection('users').doc(currentUser.uid).collection('passwords').doc(editingId).update({
+                await db.collection('passwords').doc(editingId).update({
                     site: siteClean, displaySite: siteInput, username: user, pass: encryptedPass
                 });
                 showMsg("¡Registro Actualizado!");
                 cancelEdit(); 
             } else {
-                await db.collection('users').doc(currentUser.uid).collection('passwords').add(dataToSave);
+                await db.collection('passwords').add(dataToSave);
                 showMsg("¡Guardado en la Nube!");
                 document.getElementById('siteDomain').value = "";
                 document.getElementById('userName').value = "";
@@ -537,7 +538,8 @@
 
     // --- CARGA ---
     function loadDataRealtime() {
-        db.collection('users').doc(currentUser.uid).collection('passwords')
+        db.collection('passwords')
+        .where("userId", "==", currentUser.uid)
         .onSnapshot(snap => {
             localData = [];
             snap.forEach(doc => { localData.push({ id: doc.id, ...doc.data() }); });
@@ -587,7 +589,7 @@
     }
 
     async function deleteEntry(id) {
-        if(confirm("¿Estás seguro de borrar esta contraseña?")) await db.collection('users').doc(currentUser.uid).collection('passwords').doc(id).delete();
+        if(confirm("¿Estás seguro de borrar esta contraseña?")) await db.collection('passwords').doc(id).delete();
     }
 
     document.getElementById('themeSwitch').addEventListener('change', e => document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light'));
