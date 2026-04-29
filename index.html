@@ -202,7 +202,6 @@
     </style>
 </head>
 <body>
-    <div id="recaptcha-container"></div>
 
 <div class="container">
 
@@ -224,15 +223,6 @@
         
         <button onclick="handleAuth()" id="auth-btn">Entrar a la Bóveda</button>
         <div id="auth-error" class="error-msg"></div>
-
-        <!-- PANTALLA MFA SMS -->
-        <div id="mfa-screen" style="display: none; margin-top: 20px; border-top: 2px dashed var(--border-color); padding-top: 20px;">
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">Se requiere verificación adicional. Ingresa el código enviado a tu teléfono.</p>
-            <label>Código SMS</label>
-            <input type="text" id="mfa-sms-code" placeholder="000000" maxlength="6" style="text-align: center; letter-spacing: 5px; font-weight: bold;">
-            <button onclick="handleVerifySms()" style="background-color: var(--success-color);">Verificar Código</button>
-            <p class="link-text" onclick="location.reload()" style="display:block; margin-top:10px;">Cancelar</p>
-        </div>
 
         <div id="login-controls">
             <!-- BOTÓN DE GOOGLE -->
@@ -272,38 +262,6 @@
                     <i class="fas fa-sign-out-alt"></i>
                  </button>
             </div>
-        </div>
-
-        <div id="mfa-enroll-panel" class="section" style="display: none; border: 2px solid var(--success-color); padding: 2rem; border-radius: 16px; background-color: var(--card-bg); text-align: center; margin-bottom: 2.5rem;">
-            <h3 style="margin-top:0; border:none; color: var(--success-color);"><i class="fas fa-shield-alt"></i> Blindaje de Seguridad</h3>
-            
-            <!-- Paso 0: Botón Inicial -->
-            <div id="enroll-step-0">
-                <button onclick="setEnrollStep(1)" style="background-color: var(--success-color); padding: 15px;">
-                    Vincular Teléfono (Requerido 2FA)
-                </button>
-            </div>
-            
-            <!-- Paso 1: Pedir Teléfono -->
-            <div id="enroll-step-1" style="display: none; text-align: left;">
-                <label>Número de Teléfono (con código de país):</label>
-                <input type="text" id="enroll-phone" value="+18099415112" style="margin-bottom: 15px;">
-                <button id="start-enroll-btn" onclick="startEnrollment()" style="background-color: var(--accent-color);">
-                    Enviar SMS de Código
-                </button>
-            </div>
-
-            <!-- Paso 2: Pedir SMS -->
-            <div id="enroll-step-2" style="display: none; text-align: left;">
-                <label>Código SMS de 6 dígitos:</label>
-                <input type="text" id="enroll-sms" placeholder="Ej: 123456" maxlength="6" style="text-align: center; letter-spacing: 5px; font-weight: bold;">
-                <button onclick="verifyEnrollment()" style="background-color: var(--success-color);">
-                    Verificar y Activar 2FA
-                </button>
-            </div>
-
-            <!-- CONTENEDOR RECAPTCHA ESTABLE (AFUERA DE LOS PASOS) -->
-            <div id="mfa-enroll-recaptcha" style="margin-top: 10px;"></div>
         </div>
 
         <div class="section">
@@ -391,19 +349,6 @@
     let editingId = null;
     let sessionMasterKey = ""; // MEMORIA VOLÁTIL PARA CIFRADO
 
-    // MFA STATES
-    let mfaResolver = null;
-    let verificationId = "";
-
-    // --- RECAPTCHA INVISIBLE ---
-    window.onload = () => {
-        if(!window.recaptchaVerifier) {
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                'size': 'invisible'
-            });
-        }
-    };
-
     // --- UTILIDADES ---
     function encrypt(text) {
         if(!sessionMasterKey) return text;
@@ -454,14 +399,6 @@
             document.getElementById('app-screen').style.display = 'block';
             document.getElementById('user-display').textContent = user.email.split('@')[0];
             
-            // MOSTRAR PANEL SI NO TIENE MFA
-            const mfaPanel = document.getElementById('mfa-enroll-panel');
-            if (user.multiFactor && user.multiFactor.enrolledFactors.length > 0) {
-                mfaPanel.style.display = 'none';
-            } else {
-                mfaPanel.style.display = 'block';
-            }
-            
             loadDataRealtime();
         } else {
             currentUser = null;
@@ -497,39 +434,11 @@
                 sessionMasterKey = pass; // CAPTURA LLAVE
             }
         } catch (error) {
-            if (error.code === 'auth/multi-factor-auth-required') {
-                mfaResolver = error.resolver;
-                const phoneInfoOptions = {
-                    multiFactorHint: mfaResolver.hints[0],
-                    session: mfaResolver.session
-                };
-                const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-
-                if (!window.recaptchaVerifier) {
-                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 
-                        size: 'invisible' 
-                    });
-                }
-                
-                try {
-                    verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
-                    document.getElementById('login-controls').style.display = 'none';
-                    document.getElementById('auth-btn').style.display = 'none';
-                    document.getElementById('mfa-screen').style.display = 'block';
-                } catch (smsError) {
-                    console.error("Error enviando SMS:", smsError);
-                    errDisplay.innerText = "Error al enviar código MFA.";
-                    if (window.recaptchaVerifier) {
-                        window.recaptchaVerifier.clear();
-                        window.recaptchaVerifier = null;
-                    }
-                }            } else {
-                let msg = "Error desconocido.";
-                if(error.code === 'auth/wrong-password') msg = "Contraseña incorrecta.";
-                if(error.code === 'auth/user-not-found') msg = "No existe cuenta con este correo.";
-                if(error.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado.";
-                errDisplay.innerText = msg;
-            }
+            let msg = "Error desconocido.";
+            if(error.code === 'auth/wrong-password') msg = "Contraseña incorrecta.";
+            if(error.code === 'auth/user-not-found') msg = "No existe cuenta con este correo.";
+            if(error.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado.";
+            errDisplay.innerText = msg;
         }
     }
     function logout() { auth.signOut(); }
@@ -539,122 +448,8 @@
         try {
             await auth.signInWithPopup(provider);
         } catch (error) {
-            if (error.code === 'auth/multi-factor-auth-required') {
-                mfaResolver = error.resolver;
-                const phoneInfoOptions = {
-                    multiFactorHint: mfaResolver.hints[0],
-                    session: mfaResolver.session
-                };
-                const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-
-                if (!window.recaptchaVerifier) {
-                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 
-                        size: 'invisible' 
-                    });
-                }
-                
-                try {
-                    verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
-                    document.getElementById('login-controls').style.display = 'none';
-                    document.getElementById('auth-btn').style.display = 'none';
-                    document.getElementById('mfa-screen').style.display = 'block';
-                } catch (smsError) {
-                    document.getElementById('auth-error').innerText = "Error al enviar código MFA.";
-                    if (window.recaptchaVerifier) {
-                        window.recaptchaVerifier.clear();
-                        window.recaptchaVerifier = null;
-                    }
-                }            } else {
-                console.error("Error al iniciar sesión con Google:", error);
-                document.getElementById('auth-error').innerText = "Error al conectar con Google.";
-            }
-        }
-    }
-
-    async function handleVerifySms() {
-        const smsCode = document.getElementById('mfa-sms-code').value;
-        if(!smsCode) return alert("Ingresa el código.");
-
-        try {
-            const cred = firebase.auth.PhoneAuthProvider.credential(verificationId, smsCode);
-            const multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
-            await mfaResolver.resolveSignIn(multiFactorAssertion);
-            alert("✅ Identidad verificada. Acceso Concedido.");
-        } catch (error) {
-            alert("❌ Código SMS incorrecto o expirado.");
-        }
-    }
-
-    // --- MFA ENROLLMENT (Refactored with Trazability) ---
-    let enrollVerificationId = "";
-    let isEnrollLoading = false;
-
-    function setEnrollStep(step) {
-        document.getElementById('enroll-step-0').style.display = step === 0 ? 'block' : 'none';
-        document.getElementById('enroll-step-1').style.display = step === 1 ? 'block' : 'none';
-        document.getElementById('enroll-step-2').style.display = step === 2 ? 'block' : 'none';
-    }
-
-    async function startEnrollment() {
-        if(isEnrollLoading) return;
-        
-        const phone = document.getElementById('enroll-phone').value;
-        const btn = document.getElementById('start-enroll-btn');
-        
-        if(!phone) return alert("Ingresa un número de teléfono.");
-
-        isEnrollLoading = true;
-        btn.disabled = true;
-        btn.innerText = "Procesando seguridad...";
-        console.log("🛠️ 1. Iniciando inscripción. Verificando contenedor reCAPTCHA");
-
-        try {
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'mfa-enroll-recaptcha', { 
-          'size': 'normal',
-          'callback': () => console.log("✅ reCAPTCHA resuelto por el usuario")
-        });
-        window.recaptchaVerifier.render();
-      }
-
-            console.log("🔐 2. Solicitando sesión MFA de Firebase");
-            const user = firebase.auth().currentUser;
-            const session = await user.multiFactor.getSession();
-            const phoneInfoOptions = { phoneNumber: phone, session };
-            const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-            
-            console.log("🛰️ 3. Ejecutando reCAPTCHA y solicitando envío de SMS");
-            enrollVerificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
-            
-            console.log("✅ 4. SMS enviado con éxito. ID de verificación obtenido.");
-            setEnrollStep(2); 
-        } catch (error) {
-            console.error("❌ ERROR CRÍTICO EN FIREBASE MFA:", error);
-            alert("Error al enviar: " + error.message);
-            if (window.recaptchaVerifierEnroll) {
-                window.recaptchaVerifierEnroll.clear();
-                window.recaptchaVerifierEnroll = null;
-            }
-        } finally {
-            isEnrollLoading = false;
-            btn.disabled = false;
-            btn.innerText = "Enviar SMS de Código";
-        }
-    }
-
-    async function verifyEnrollment() {
-        const smsCode = document.getElementById('enroll-sms').value;
-        if(!smsCode) return alert("Ingresa el código de 6 dígitos.");
-
-        try {
-            const user = firebase.auth().currentUser;
-            const cred = firebase.auth.PhoneAuthProvider.credential(enrollVerificationId, smsCode);
-            const multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
-            await user.multiFactor.enroll(multiFactorAssertion, "Teléfono Personal");
-            alert("✅ MFA Activado. Base de datos desbloqueada.");
-            window.location.reload();
-        } catch (error) {
-            alert("❌ Código incorrecto o error de servidor: " + error.message);
+            console.error("Error al iniciar sesión con Google:", error);
+            document.getElementById('auth-error').innerText = "Error al conectar con Google.";
         }
     }
 
