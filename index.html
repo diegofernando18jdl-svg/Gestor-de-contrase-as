@@ -341,6 +341,7 @@
     
     const auth = firebase.auth();
     const db = firebase.firestore();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
 
     // --- VARIABLES ---
     let isRegisterMode = false;
@@ -394,6 +395,7 @@
     // --- AUTH ---
     auth.onAuthStateChanged(user => {
         if (user) {
+            console.log("SISTEMA: Usuario detectado ->", user.uid);
             currentUser = user;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'block';
@@ -401,6 +403,7 @@
             
             loadDataRealtime();
         } else {
+            console.log("SISTEMA: Sesión cerrada o no iniciada.");
             currentUser = null;
             document.getElementById('app-screen').style.display = 'none';
             document.getElementById('login-screen').style.display = 'block';
@@ -434,6 +437,7 @@
                 sessionMasterKey = pass; // CAPTURA LLAVE
             }
         } catch (error) {
+            console.error("DEBUG LOGIN ERROR:", error.code, error.message);
             let msg = "Error desconocido.";
             if(error.code === 'auth/wrong-password') msg = "Contraseña incorrecta.";
             if(error.code === 'auth/user-not-found') msg = "No existe cuenta con este correo.";
@@ -444,12 +448,15 @@
     function logout() { auth.signOut(); }
 
     async function signInWithGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
         try {
-            await auth.signInWithPopup(provider);
+            const result = await auth.signInWithPopup(googleProvider);
+            console.log("GOOGLE LOGIN SUCCESS:", result.user.uid);
         } catch (error) {
-            console.error("Error al iniciar sesión con Google:", error);
-            document.getElementById('auth-error').innerText = "Error al conectar con Google.";
+            console.error("DEBUG GOOGLE AUTH ERROR:", error.code, error.message);
+            let msg = "Error al conectar con Google.";
+            if(error.code === 'auth/popup-closed-by-user') msg = "Ventana de Google cerrada antes de tiempo.";
+            if(error.code === 'auth/unauthorized-domain') msg = "Este dominio no está autorizado en Firebase.";
+            document.getElementById('auth-error').innerText = msg;
         }
     }
 
