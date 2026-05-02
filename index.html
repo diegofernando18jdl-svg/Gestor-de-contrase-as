@@ -453,9 +453,7 @@
             console.log("GOOGLE LOGIN SUCCESS:", result.user.uid);
         } catch (error) {
             console.error("DEBUG GOOGLE AUTH ERROR:", error.code, error.message);
-            let msg = "Error al conectar con Google.";
-            if(error.code === 'auth/popup-closed-by-user') msg = "Ventana de Google cerrada antes de tiempo.";
-            if(error.code === 'auth/unauthorized-domain') msg = "Este dominio no está autorizado en Firebase.";
+            const msg = `ERROR [${error.code}]: ${error.message}`;
             document.getElementById('auth-error').innerText = msg;
         }
     }
