@@ -718,7 +718,7 @@
                     <div class="action-buttons">
                         <button class="action-btn" onclick="copiar('${escapeHTML(decryptedPass)}')" title="Copiar"><i class="fas fa-copy"></i></button>
                         <button class="action-btn edit-btn" onclick="startEdit('${d.id}', '${nombreMostrar}', '${escapeHTML(d.username)}', '${escapeHTML(decryptedPass)}')" title="Editar"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="action-btn delete-btn" onclick="deleteEntry('${d.id}')" title="Borrar"><i class="fas fa-trash"></i></button>
+                        <button class="action-btn delete-btn" onclick="eliminarCredencial('${d.id}')" title="Borrar"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
             `;
@@ -726,24 +726,25 @@
         });
     }
 
-    async function deleteEntry(id) {
-        console.log("SISTEMA: Intentando eliminar el ítem con ID:", id);
+    async function eliminarCredencial(id) {
+        console.log("SISTEMA_V2: Iniciando borrado real para ID:", id);
         
         if(!confirm("¿Estás seguro de borrar esta contraseña?")) return;
 
         try {
-            // Borrado físico en Firestore
-            await db.collection('passwords').doc(id).delete();
+            // Referencia explícita a la colección 'passwords'
+            const docRef = db.collection('passwords').doc(id);
+            await docRef.delete();
             
-            console.log("¡Borrado exitoso!");
-            showMsg("Registro eliminado con éxito.");
+            console.log("¡Borrado en base de datos exitoso!");
+            showMsg("Registro eliminado correctamente.");
             
-            // Forzar recarga de la UI
+            // Forzar actualización visual
             loadDataRealtime(); 
             renderLocalData();
         } catch (error) {
-            console.error("Error fatal al eliminar:", error);
-            alert("Error crítico: No se pudo eliminar de Firebase. Revisa la consola.");
+            console.error("ERROR CRÍTICO AL BORRAR:", error);
+            alert("Error al borrar: " + error.message);
         }
     }
 
