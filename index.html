@@ -580,10 +580,12 @@
             errorDisplay.style.display = 'none';
             errorDisplay.textContent = "";
 
-            const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+            // Nota: En este entorno sin bundler, la llave debe ser proveída manualmente
+            // o mediante un script de configuración previo.
+            const GROQ_API_KEY = window.VITE_GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
             
             if (!GROQ_API_KEY) {
-                throw new Error("VITE_GROQ_API_KEY no configurada en el entorno.");
+                throw new Error("GROQ_API_KEY no configurada. Por favor, ejecute: localStorage.setItem('GROQ_API_KEY', 'tu_llave_aqui') en la consola.");
             }
 
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {

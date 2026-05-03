@@ -12,7 +12,7 @@ export const extraerCredencialesDeImagen = async (base64Image) => {
  * Utiliza un modelo de texto de alta capacidad.
  */
 export const extraerCredencialesDeTexto = async (textoPuro) => {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  const apiKey = window.VITE_GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
   const url = 'https://api.groq.com/openai/v1/chat/completions';
 
   const systemPrompt = `Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve EXCLUSIVAMENTE un array JSON válido con esta estructura exacta: [{ "servicio": "", "usuario": "", "password": "" }]. Si un servicio solo tiene un 'Token' (como LocalXpose), asígnalo al campo 'password' y deja 'usuario' como un string vacío. Prohibido incluir texto conversacional antes o después del JSON.`;
