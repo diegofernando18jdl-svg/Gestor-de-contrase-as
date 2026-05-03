@@ -4,11 +4,18 @@
  */
 
 export const extraerCredencialesDeImagen = async (base64Image) => {
+  // ... (código existente)
+};
+
+/**
+ * Nueva función para extraer credenciales desde bloques de texto desordenado.
+ * Utiliza un modelo de texto de alta capacidad.
+ */
+export const extraerCredencialesDeTexto = async (textoPuro) => {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   const url = 'https://api.groq.com/openai/v1/chat/completions';
 
-  // System Prompt estricto para asegurar el formato de salida
-  const systemPrompt = `Prohibido conversar. Devolver ÚNICAMENTE un arreglo en formato JSON con la estructura: [{ "servicio": "", "usuario": "", "password": "" }].`;
+  const systemPrompt = `Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve ÚNICAMENTE un arreglo en formato JSON válido con esta estructura exacta: [{ "servicio": "", "usuario": "", "password": "" }]. Prohibido incluir texto conversacional antes o después del JSON.`;
 
   try {
     const response = await fetch(url, {
@@ -18,29 +25,12 @@ export const extraerCredencialesDeImagen = async (base64Image) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'llama-3.2-90b-vision-preview',
+        model: 'llama-3.3-70b-versatile',
         messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Extrae las credenciales presentes en esta imagen.'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${base64Image}`
-                }
-              }
-            ]
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: textoPuro }
         ],
-        temperature: 0
+        temperature: 0.1 // Baja temperatura para mayor precisión en el formato
       })
     });
 
@@ -51,11 +41,14 @@ export const extraerCredencialesDeImagen = async (base64Image) => {
 
     const data = await response.json();
     const resultText = data.choices[0].message.content;
-
-    // Retornamos el JSON parseado directamente
-    return JSON.parse(resultText);
+    
+    // Limpieza de posibles backticks de markdown si la IA los incluye
+    const jsonString = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    return JSON.parse(jsonString);
   } catch (error) {
-    console.error('Groq Service Error:', error);
+    console.error('Groq Text Service Error:', error);
     throw error;
   }
 };
+
