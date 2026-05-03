@@ -513,14 +513,14 @@
                 site: siteClean,
                 displaySite: siteInput, 
                 username: user, 
-                pass: encryptedPass,
+                contrasena: encryptedPass,
                 userId: currentUser.uid,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             if (editingId) {
                 await db.collection('passwords').doc(editingId).update({
-                    site: siteClean, displaySite: siteInput, username: user, pass: encryptedPass
+                    site: siteClean, displaySite: siteInput, username: user, contrasena: encryptedPass
                 });
                 showMsg("¡Registro Actualizado!");
                 cancelEdit(); 
@@ -534,11 +534,11 @@
         } catch(e) { alert("Error al guardar: " + e.message); }
     }
 
-    function startEdit(id, displaySite, username, pass) {
+    function startEdit(id, displaySite, username, contrasena) {
         editingId = id;
         document.getElementById('siteDomain').value = displaySite;
         document.getElementById('userName').value = username;
-        document.getElementById('passwordSave').value = pass;
+        document.getElementById('passwordSave').value = contrasena;
         
         const saveBtn = document.getElementById('saveBtn');
         saveBtn.innerHTML = '<i class="fas fa-sync"></i> Actualizar Datos';
@@ -652,7 +652,7 @@
                         site: siteClean,
                         displaySite: servicio,
                         username: usuario,
-                        pass: encryptedPass,
+                        contrasena: encryptedPass,
                         userId: uid,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
@@ -708,7 +708,7 @@
 
             const logoHtml = showLogos ? `<img src="${logoUrl}" class="site-logo" onerror="this.src='https://via.placeholder.com/32?text=?'">` : `<i class="fas fa-globe" style="margin-right:10px"></i>`;
             const nombreMostrar = d.displaySite || d.site;
-            const decryptedPass = decrypt(d.pass); // DESCIFRADO
+            const decryptedPass = decrypt(d.contrasena); // DESCIFRADO
 
             row.innerHTML = `
                 <td><div class="logo-cell">${logoHtml}<span>${escapeHTML(nombreMostrar)}</span></div></td>
