@@ -580,8 +580,6 @@
             errorDisplay.style.display = 'none';
             errorDisplay.textContent = "";
 
-            // Nota: En este entorno sin bundler, la llave debe ser proveída manualmente
-            // o mediante un script de configuración previo.
             const GROQ_API_KEY = window.VITE_GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
             
             if (!GROQ_API_KEY) {
@@ -615,7 +613,7 @@
             const data = await response.json();
             const rawContent = data.choices[0].message.content;
             
-            console.log("Respuesta de la IA:", rawContent);
+            console.log("SISTEMA: Respuesta cruda de la IA:", rawContent);
 
             // Limpieza estricta de JSON con regex
             const match = rawContent.match(/\[[\s\S]*\]/);
@@ -633,35 +631,40 @@
 
                 console.log("SISTEMA: Iniciando guardado masivo para UID:", uid);
 
-                for (const cred of nuevasCredenciales) {
-                    // Limpieza y validación estricta
-                    const servicio = (cred.servicio || "").trim();
-                    const usuario = (cred.usuario || "").trim();
-                    const password = (cred.password || "").trim();
+                for (const item of nuevasCredenciales) {
+                    // MAPEO ESTRICTO Y ELIMINACIÓN DE FALLBACKS "---"
+                    const servicioRaw = (item.servicio || "").trim();
+                    const usuarioRaw = (item.usuario || "").trim();
+                    const passwordRaw = (item.password || "").trim();
 
-                    if (!servicio || !password) {
-                        console.warn("SISTEMA: Saltando entrada incompleta:", cred);
+                    if (!servicioRaw || !passwordRaw) {
+                        console.warn("SISTEMA: Saltando entrada incompleta:", item);
                         continue;
                     }
 
-                    const encryptedPass = encrypt(password);
-                    let siteClean = servicio.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
+                    const encryptedPass = encrypt(passwordRaw);
+                    let siteClean = servicioRaw.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
                     if(siteClean && !siteClean.includes('.')) siteClean += ".com";
 
                     const dataToSave = {
                         site: siteClean,
-                        displaySite: servicio,
-                        username: usuario,
+                        displaySite: servicioRaw,
+                        username: usuarioRaw,
                         contrasena: encryptedPass,
                         userId: uid,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
 
-                    await db.collection('passwords').add(dataToSave);
+                    // GUARDADO Y CAPTURA DE ID REAL
+                    const docRef = await db.collection('passwords').add(dataToSave);
+                    console.log(`SISTEMA: Ítem guardado [${servicioRaw}] con ID: ${docRef.id}`);
                 }
                 
                 showMsg(`¡${nuevasCredenciales.length} cuentas organizadas y guardadas!`);
                 textInput.value = ""; // Limpiar textarea
+                
+                // Sincronización forzada
+                loadDataRealtime();
             }
 
         } catch (error) {
@@ -729,6 +732,12 @@
     async function eliminarCredencial(id) {
         console.log("SISTEMA_V2: Iniciando borrado real para ID:", id);
         
+        if (!id || id === "undefined" || id === "null") {
+            console.error("ERROR CRÍTICO: Se intentó eliminar un ítem sin ID de Firestore.");
+            alert("Error: El ítem aún no tiene un ID válido de base de datos. Por favor, recarga la página.");
+            return;
+        }
+
         if(!confirm("¿Estás seguro de borrar esta contraseña?")) return;
 
         try {
