@@ -727,19 +727,26 @@
     }
 
     async function deleteEntry(id) {
+        console.log("SISTEMA: Intentando eliminar el ítem con ID:", id);
+        
         if(!confirm("¿Estás seguro de borrar esta contraseña?")) return;
 
         try {
-            // Actualización optimista: Remover de la UI antes de que Firebase responda
+            // Actualización optimista para feedback instantáneo
             localData = localData.filter(d => d.id !== id);
             renderLocalData();
 
+            // Borrado físico en Firestore (Documentos separados)
             await db.collection('passwords').doc(id).delete();
-            showMsg("Registro eliminado.");
+            
+            showMsg("Registro eliminado con éxito.");
+            console.log("SISTEMA: Ítem eliminado de la base de datos.");
+            
+            // Volver a pintar por seguridad
+            renderLocalData();
         } catch (error) {
-            console.error("Error al eliminar:", error);
+            console.error("SISTEMA: Error al eliminar:", error);
             alert("No se pudo eliminar el registro: " + error.message);
-            // Revertir en caso de error (onSnapshot lo hará eventualmente, pero esto es más limpio)
             loadDataRealtime(); 
         }
     }
