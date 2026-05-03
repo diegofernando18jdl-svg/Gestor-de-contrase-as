@@ -597,7 +597,7 @@
                     messages: [
                         {
                             role: 'system',
-                            content: 'Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve EXCLUSIVAMENTE un array JSON válido con esta estructura exacta: [{ "servicio": "", "usuario": "", "password": "" }]. Si un servicio solo tiene un \'Token\' (como LocalXpose), asígnalo al campo \'password\' y deja \'usuario\' como un string vacío. Prohibido incluir texto conversacional antes o después del JSON.'
+                            content: 'Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve EXCLUSIVAMENTE un array JSON válido usando EXACTAMENTE estas claves: "servicio", "usuario" y "contrasena" (escribe "contrasena" sin la letra ñ ni mayúsculas). Prohibido incluir texto conversacional antes o después del JSON.'
                         },
                         {
                             role: 'user',
@@ -632,10 +632,10 @@
                 console.log("SISTEMA: Iniciando guardado masivo para UID:", uid);
 
                 for (const item of nuevasCredenciales) {
-                    // MAPEO ESTRICTO Y ELIMINACIÓN DE FALLBACKS "---"
-                    const servicioRaw = (item.servicio || "").trim();
-                    const usuarioRaw = (item.usuario || "").trim();
-                    const passwordRaw = (item.password || "").trim();
+                    // MAPEO INFALIBLE Y ELIMINACIÓN DE FALLBACKS "---"
+                    const servicioRaw = (item.servicio || item.service || "Desconocido").trim();
+                    const usuarioRaw = (item.usuario || item.user || item.username || "").trim();
+                    const passwordRaw = (item.contrasena || item.password || item.Contraseña || item.contraseña || item.pass || "").trim();
 
                     if (!servicioRaw || !passwordRaw) {
                         console.warn("SISTEMA: Saltando entrada incompleta:", item);
@@ -738,10 +738,8 @@
             return;
         }
 
-        if(!confirm("¿Estás seguro de borrar esta contraseña?")) return;
-
         try {
-            // Referencia explícita a la colección 'passwords'
+            // Borrado físico en Firestore
             const docRef = db.collection('passwords').doc(id);
             await docRef.delete();
             
