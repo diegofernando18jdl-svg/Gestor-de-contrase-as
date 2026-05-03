@@ -278,8 +278,25 @@
             <div class="copy-feedback" id="feedbackMsg">Copiado al portapapeles</div>
         </div>
 
+        <!-- --- ESCÁNER IA (CHATBOT) --- -->
+        <div class="section" id="ai-scanner-section">
+            <h2 id="aiScannerTitle"><i class="fas fa-robot"></i> 🤖 Escáner IA (Chatbot)</h2>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+                Sube una imagen o captura de pantalla con credenciales para extraerlas automáticamente.
+            </p>
+            <div class="ai-input-wrapper" style="display: flex; gap: 10px; align-items: center;">
+                <input type="file" id="aiImageInput" accept="image/*" style="margin-bottom: 0; padding: 8px;">
+                <button id="scanBtn" onclick="runAIScan()" style="white-space: nowrap;">
+                    <i class="fas fa-search"></i> Iniciar Escaneo
+                </button>
+            </div>
+            <div id="aiLoading" style="display: none; margin-top: 15px; color: var(--accent-color); font-weight: bold; text-align: center;">
+                <i class="fas fa-spinner fa-spin"></i> Analizando documento...
+            </div>
+        </div>
+
         <div class="section">
-            <h3 id="formTitle"><i class="fas fa-save"></i> Guardar Datos</h3>
+            <h2 id="formTitle"><i class="fas fa-save"></i> Guardar Datos</h2>
             <label>Sitio Web / Servicio</label>
             <input type="text" id="siteDomain" placeholder="Ej: Qik, La Nacional, Google, Netflix...">
             <label>Usuario / Correo</label>
@@ -539,6 +556,102 @@
         saveBtn.style.backgroundColor = '';
         document.getElementById('cancelEditBtn').style.display = 'none';
         document.getElementById('formTitle').innerHTML = '<i class="fas fa-save"></i> Guardar Datos';
+    }
+
+    // --- IA SCANNER ---
+    async function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    async function runAIScan() {
+        const fileInput = document.getElementById('aiImageInput');
+        const scanBtn = document.getElementById('scanBtn');
+        const loading = document.getElementById('aiLoading');
+        
+        if (!fileInput.files || fileInput.files.length === 0) {
+            return alert("Por favor selecciona una imagen primero.");
+        }
+
+        try {
+            // Activar loading
+            scanBtn.disabled = true;
+            loading.style.display = 'block';
+
+            const base64 = await fileToBase64(fileInput.files[0]);
+            
+            // Llamada al servicio Groq
+            // Nota: Se utiliza una variable que debe ser configurada previamente.
+            // No hardcodear llaves para evitar bloqueos de seguridad en Git.
+            const GROQ_API_KEY = window.VITE_GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
+            
+            if (!GROQ_API_KEY) {
+                throw new Error("GROQ_API_KEY no configurada. Por favor configúrala en la consola o localStorage.");
+            }
+
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${GROQ_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'llama-3.2-90b-vision-preview',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'Prohibido conversar. Devolver ÚNICAMENTE un arreglo en formato JSON con la estructura: [{ "servicio": "", "usuario": "", "password": "" }].'
+                        },
+                        {
+                            role: 'user',
+                            content: [
+                                { type: 'text', text: 'Extrae las credenciales presentes en esta imagen.' },
+                                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+                            ]
+                        }
+                    ],
+                    temperature: 0
+                })
+            });
+
+            if (!response.ok) throw new Error("Error en la API de Groq");
+            
+            const data = await response.json();
+            const rawContent = data.choices[0].message.content;
+            const nuevasCredenciales = JSON.parse(rawContent);
+
+            if (Array.isArray(nuevasCredenciales)) {
+                for (const cred of nuevasCredenciales) {
+                    const encryptedPass = encrypt(cred.password);
+                    const siteClean = cred.servicio.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
+
+                    const dataToSave = {
+                        site: siteClean,
+                        displaySite: cred.servicio,
+                        username: cred.usuario,
+                        pass: encryptedPass,
+                        userId: currentUser.uid,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    await db.collection('passwords').add(dataToSave);
+                }
+                
+                showMsg(`¡${nuevasCredenciales.length} credenciales extraídas!`);
+                fileInput.value = ""; // Limpiar input
+            }
+
+        } catch (error) {
+            console.error("AI Scan Error:", error);
+            alert("Error al escanear: " + error.message);
+        } finally {
+            scanBtn.disabled = false;
+            loading.style.display = 'none';
+        }
     }
 
     // --- CARGA ---
