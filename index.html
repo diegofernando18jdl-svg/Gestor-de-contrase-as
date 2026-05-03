@@ -727,7 +727,21 @@
     }
 
     async function deleteEntry(id) {
-        if(confirm("¿Estás seguro de borrar esta contraseña?")) await db.collection('passwords').doc(id).delete();
+        if(!confirm("¿Estás seguro de borrar esta contraseña?")) return;
+
+        try {
+            // Actualización optimista: Remover de la UI antes de que Firebase responda
+            localData = localData.filter(d => d.id !== id);
+            renderLocalData();
+
+            await db.collection('passwords').doc(id).delete();
+            showMsg("Registro eliminado.");
+        } catch (error) {
+            console.error("Error al eliminar:", error);
+            alert("No se pudo eliminar el registro: " + error.message);
+            // Revertir en caso de error (onSnapshot lo hará eventualmente, pero esto es más limpio)
+            loadDataRealtime(); 
+        }
     }
 
     document.getElementById('themeSwitch').addEventListener('change', e => document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light'));
