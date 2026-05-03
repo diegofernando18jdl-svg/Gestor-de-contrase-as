@@ -15,7 +15,7 @@ export const extraerCredencialesDeTexto = async (textoPuro) => {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   const url = 'https://api.groq.com/openai/v1/chat/completions';
 
-  const systemPrompt = `Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve ÚNICAMENTE un arreglo en formato JSON válido con esta estructura exacta: [{ "servicio": "", "usuario": "", "password": "" }]. Prohibido incluir texto conversacional antes o después del JSON.`;
+  const systemPrompt = `Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve EXCLUSIVAMENTE un array JSON válido con esta estructura exacta: [{ "servicio": "", "usuario": "", "password": "" }]. Si un servicio solo tiene un 'Token' (como LocalXpose), asígnalo al campo 'password' y deja 'usuario' como un string vacío. Prohibido incluir texto conversacional antes o después del JSON.`;
 
   try {
     const response = await fetch(url, {
@@ -30,7 +30,7 @@ export const extraerCredencialesDeTexto = async (textoPuro) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: textoPuro }
         ],
-        temperature: 0.1 // Baja temperatura para mayor precisión en el formato
+        temperature: 0.1
       })
     });
 
@@ -42,10 +42,16 @@ export const extraerCredencialesDeTexto = async (textoPuro) => {
     const data = await response.json();
     const resultText = data.choices[0].message.content;
     
-    // Limpieza de posibles backticks de markdown si la IA los incluye
-    const jsonString = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+    // Depuración en consola
+    console.log("Respuesta de la IA (Raw):", resultText);
+
+    // Limpieza extrema con regex para extraer solo el bloque del arreglo
+    const match = resultText.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error("La IA no devolvió un formato JSON válido.");
     
-    return JSON.parse(jsonString);
+    const jsonLimpio = match[0];
+    
+    return JSON.parse(jsonLimpio);
   } catch (error) {
     console.error('Groq Text Service Error:', error);
     throw error;

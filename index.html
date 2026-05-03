@@ -294,6 +294,8 @@
             <div id="aiLoading" style="display: none; margin-top: 15px; color: var(--accent-color); font-weight: bold; text-align: center;">
                 <i class="fas fa-spinner fa-spin"></i> Organizándolo todo... un momento...
             </div>
+            <div id="aiError" style="display: none; margin-top: 15px; color: var(--danger-color); font-weight: bold; text-align: center; font-size: 0.85rem; border: 1px solid var(--danger-color); padding: 10px; border-radius: 8px;">
+            </div>
         </div>
 
         <div class="section">
@@ -564,6 +566,7 @@
         const textInput = document.getElementById('aiTextInput');
         const scanBtn = document.getElementById('scanBtn');
         const loading = document.getElementById('aiLoading');
+        const errorDisplay = document.getElementById('aiError');
         const textoPuro = textInput.value.trim();
         
         if (!textoPuro) {
@@ -571,9 +574,11 @@
         }
 
         try {
-            // Activar loading
+            // Resetear UI
             scanBtn.disabled = true;
             loading.style.display = 'block';
+            errorDisplay.style.display = 'none';
+            errorDisplay.textContent = "";
 
             const GROQ_API_KEY = window.VITE_GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
             
@@ -592,7 +597,7 @@
                     messages: [
                         {
                             role: 'system',
-                            content: 'Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve ÚNICAMENTE un arreglo en formato JSON válido con esta estructura exacta: [{ "servicio": "", "usuario": "", "password": "" }]. Prohibido incluir texto conversacional antes o después del JSON.'
+                            content: 'Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve EXCLUSIVAMENTE un array JSON válido con esta estructura exacta: [{ "servicio": "", "usuario": "", "password": "" }]. Si un servicio solo tiene un \'Token\' (como LocalXpose), asígnalo al campo \'password\' y deja \'usuario\' como un string vacío. Prohibido incluir texto conversacional antes o después del JSON.'
                         },
                         {
                             role: 'user',
@@ -608,19 +613,24 @@
             const data = await response.json();
             const rawContent = data.choices[0].message.content;
             
-            // Limpieza de backticks
-            const jsonString = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+            console.log("Respuesta de la IA:", rawContent);
+
+            // Limpieza estricta de JSON con regex
+            const match = rawContent.match(/\[[\s\S]*\]/);
+            if (!match) throw new Error("La IA no devolvió un formato JSON válido (Arreglo no encontrado).");
+            
+            const jsonString = match[0];
             const nuevasCredenciales = JSON.parse(jsonString);
 
             if (Array.isArray(nuevasCredenciales)) {
                 for (const cred of nuevasCredenciales) {
-                    const encryptedPass = encrypt(cred.password);
-                    const siteClean = cred.servicio.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
+                    const encryptedPass = encrypt(cred.password || "");
+                    const siteClean = (cred.servicio || "Desconocido").toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
 
                     const dataToSave = {
                         site: siteClean,
-                        displaySite: cred.servicio,
-                        username: cred.usuario,
+                        displaySite: cred.servicio || "Desconocido",
+                        username: cred.usuario || "",
                         pass: encryptedPass,
                         userId: currentUser.uid,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -635,7 +645,8 @@
 
         } catch (error) {
             console.error("AI Text Scan Error:", error);
-            alert("Error al procesar texto: " + error.message);
+            errorDisplay.textContent = "⚠️ Error: " + error.message;
+            errorDisplay.style.display = 'block';
         } finally {
             scanBtn.disabled = false;
             loading.style.display = 'none';
