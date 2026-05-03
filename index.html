@@ -625,16 +625,35 @@
             const nuevasCredenciales = JSON.parse(jsonString);
 
             if (Array.isArray(nuevasCredenciales)) {
+                const uid = auth.currentUser ? auth.currentUser.uid : (currentUser ? currentUser.uid : null);
+                
+                if (!uid) {
+                    throw new Error("No hay una sesión activa para guardar los datos.");
+                }
+
+                console.log("SISTEMA: Iniciando guardado masivo para UID:", uid);
+
                 for (const cred of nuevasCredenciales) {
-                    const encryptedPass = encrypt(cred.password || "");
-                    const siteClean = (cred.servicio || "Desconocido").toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
+                    // Limpieza y validación estricta
+                    const servicio = (cred.servicio || "").trim();
+                    const usuario = (cred.usuario || "").trim();
+                    const password = (cred.password || "").trim();
+
+                    if (!servicio || !password) {
+                        console.warn("SISTEMA: Saltando entrada incompleta:", cred);
+                        continue;
+                    }
+
+                    const encryptedPass = encrypt(password);
+                    let siteClean = servicio.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
+                    if(siteClean && !siteClean.includes('.')) siteClean += ".com";
 
                     const dataToSave = {
                         site: siteClean,
-                        displaySite: cred.servicio || "Desconocido",
-                        username: cred.usuario || "",
+                        displaySite: servicio,
+                        username: usuario,
                         pass: encryptedPass,
-                        userId: currentUser.uid,
+                        userId: uid,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
 
