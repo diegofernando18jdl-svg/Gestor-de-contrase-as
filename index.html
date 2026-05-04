@@ -624,6 +624,7 @@
             
             const jsonString = match[0];
             const nuevasCredenciales = JSON.parse(jsonString);
+            console.log("🕵️ RAYOS X [1] - JSON puro de la IA:", nuevasCredenciales);
 
             if (Array.isArray(nuevasCredenciales)) {
                 const uid = auth.currentUser ? auth.currentUser.uid : (currentUser ? currentUser.uid : null);
@@ -640,14 +641,15 @@
                     const usuarioRaw = (item.usuario || "").trim();
                     
                     // FUERZA la extracción en el código JS por si la IA se equivoca
-                    const passReal = item.clave || item.contrasena || item.password || item.Contraseña || item.Token || item.pass;
+                    const passCapturada = item.clave || item.contrasena || item.password || item.Contraseña || item.Token || item.pass || "FALLO_EXTRACCION";
+                    console.log("🕵️ RAYOS X [2] - Contraseña extraída:", passCapturada);
 
-                    if (!servicioRaw || !passReal) {
-                        console.warn("SISTEMA: Saltando entrada incompleta:", item);
+                    if (!servicioRaw || passCapturada === "FALLO_EXTRACCION") {
+                        console.warn("SISTEMA: Saltando entrada incompleta o fallida:", item);
                         continue;
                     }
 
-                    const encryptedPass = encrypt(passReal);
+                    const encryptedPass = encrypt(passCapturada);
                     let siteClean = servicioRaw.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
                     if(siteClean && !siteClean.includes('.')) siteClean += ".com";
 
@@ -709,6 +711,7 @@
         if(localData.length === 0) return tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:30px; color:#888;'>No tienes contraseñas guardadas aún.</td></tr>";
 
         localData.forEach(d => {
+            console.log("🕵️ RAYOS X [3] - Objeto leído de Firebase:", d);
             const row = document.createElement('tr');
             
             let logoUrl = `https://www.google.com/s2/favicons?domain=${d.site}&sz=64`;
@@ -718,8 +721,8 @@
             const logoHtml = showLogos ? `<img src="${logoUrl}" class="site-logo" onerror="this.src='https://via.placeholder.com/32?text=?'">` : `<i class="fas fa-globe" style="margin-right:10px"></i>`;
             const nombreMostrar = d.displaySite || d.site;
             
-            // UNIFICACIÓN EN EL RENDERIZADO (LA TABLA UI)
-            const valorCifrado = d.clave || d.contrasena || d.password || "";
+            // UNIFICACIÓN EN EL RENDERIZADO (LA TABLA UI) - RAYOS X
+            const valorCifrado = d.clave || d.contrasena || d.password || d.pass || d.Contraseña || "";
             const decryptedPass = decrypt(valorCifrado) || "---";
 
             row.innerHTML = `
