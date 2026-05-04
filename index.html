@@ -313,6 +313,9 @@
             </div>
             <button onclick="saveEntry()" id="saveBtn"><i class="fas fa-cloud-upload-alt"></i> Guardar en Nube</button>
             <button onclick="cancelEdit()" id="cancelEditBtn"><i class="fas fa-times"></i> Cancelar Edición</button>
+            <button onclick="eliminarTodo()" style="background-color: var(--danger-color); margin-top: 10px; width: 100%;">
+                <i class="fas fa-trash-alt"></i> 🗑️ Limpiar Bóveda (Borrar Todo)
+            </button>
         </div>
 
         <div>
@@ -597,7 +600,7 @@
                     messages: [
                         {
                             role: 'system',
-                            content: 'Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve EXCLUSIVAMENTE un array JSON válido usando EXACTAMENTE estas claves: "servicio", "usuario" y "contrasena" (escribe "contrasena" sin la letra ñ ni mayúsculas). Prohibido incluir texto conversacional antes o después del JSON.'
+                            content: 'Tu única misión es devolver un JSON. La clave de la contraseña DEBE ser "contrasena" (así, sin la letra ñ). No uses "password", no uses "Contraseña". Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve EXCLUSIVAMENTE un array JSON válido usando EXACTAMENTE estas claves: "servicio", "usuario" y "contrasena". Prohibido incluir texto conversacional antes o después del JSON.'
                         },
                         {
                             role: 'user',
@@ -632,17 +635,17 @@
                 console.log("SISTEMA: Iniciando guardado masivo para UID:", uid);
 
                 for (const item of nuevasCredenciales) {
-                    // MAPEO INFALIBLE Y ELIMINACIÓN DE FALLBACKS "---"
-                    const servicioRaw = (item.servicio || item.service || "Desconocido").trim();
-                    const usuarioRaw = (item.usuario || item.user || item.username || "").trim();
-                    const passwordRaw = (item.contrasena || item.password || item.Contraseña || item.contraseña || item.pass || "").trim();
+                    // RESOLUCIÓN DEFINITIVA DE LAS CONTRASEÑAS "---"
+                    const servicioRaw = (item.servicio || "").trim();
+                    const usuarioRaw = (item.usuario || "").trim();
+                    const passwordReal = (item.contrasena || item.password || item.Contraseña || item.contraseña || item.pass || "").trim();
 
-                    if (!servicioRaw || !passwordRaw) {
+                    if (!servicioRaw || !passwordReal) {
                         console.warn("SISTEMA: Saltando entrada incompleta:", item);
                         continue;
                     }
 
-                    const encryptedPass = encrypt(passwordRaw);
+                    const encryptedPass = encrypt(passwordReal);
                     let siteClean = servicioRaw.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
                     if(siteClean && !siteClean.includes('.')) siteClean += ".com";
 
@@ -752,6 +755,37 @@
         } catch (error) {
             console.error("ERROR CRÍTICO AL BORRAR:", error);
             alert("Error al borrar: " + error.message);
+        }
+    }
+
+    async function eliminarTodo() {
+        const uid = auth.currentUser ? auth.currentUser.uid : (currentUser ? currentUser.uid : null);
+        if (!uid) return alert("Debes estar autenticado para limpiar la bóveda.");
+
+        console.log("SISTEMA: Iniciando limpieza total de la bóveda para UID:", uid);
+
+        try {
+            const querySnapshot = await db.collection('passwords').where("userId", "==", uid).get();
+            
+            if (querySnapshot.empty) {
+                return showMsg("La bóveda ya está vacía.");
+            }
+
+            const batch = db.batch();
+            querySnapshot.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+
+            await batch.commit();
+            console.log("SISTEMA: Bóveda limpiada con éxito.");
+            showMsg("Bóveda vaciada correctamente.");
+
+            // Limpieza inmediata del estado local y UI
+            localData = [];
+            renderLocalData();
+        } catch (error) {
+            console.error("SISTEMA: Error al limpiar la bóveda:", error);
+            alert("Error al vaciar la bóveda: " + error.message);
         }
     }
 
