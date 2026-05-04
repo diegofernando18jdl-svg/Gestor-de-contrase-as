@@ -357,7 +357,6 @@
     // Inicializar Firebase
     try { 
         firebase.initializeApp(firebaseConfig); 
-        console.log("Firebase conectado");
     } catch(e) { 
         console.error("Error conectando Firebase:", e); 
     }
@@ -380,12 +379,12 @@
     }
 
     function decrypt(ciphertext) {
-        if(!sessionMasterKey) return "---";
+        if(!sessionMasterKey) return null;
         try {
             const bytes = CryptoJS.AES.decrypt(ciphertext, sessionMasterKey);
             const originalText = bytes.toString(CryptoJS.enc.Utf8);
-            return originalText || "ERROR_KEY";
-        } catch(e) { return "ERROR_DEC"; }
+            return originalText || null;
+        } catch(e) { return null; }
     }
 
     function togglePass(inputId, btn) {
@@ -418,7 +417,6 @@
     // --- AUTH ---
     auth.onAuthStateChanged(user => {
         if (user) {
-            console.log("SISTEMA: Usuario detectado ->", user.uid);
             currentUser = user;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'block';
@@ -426,7 +424,6 @@
             
             loadDataRealtime();
         } else {
-            console.log("SISTEMA: Sesión cerrada o no iniciada.");
             currentUser = null;
             document.getElementById('app-screen').style.display = 'none';
             document.getElementById('login-screen').style.display = 'block';
@@ -473,7 +470,6 @@
     async function signInWithGoogle() {
         try {
             const result = await auth.signInWithPopup(googleProvider);
-            console.log("GOOGLE LOGIN SUCCESS:", result.user.uid);
         } catch (error) {
             console.error("DEBUG GOOGLE AUTH ERROR:", error.code, error.message);
             const msg = `ERROR [${error.code}]: ${error.message}`;
@@ -615,8 +611,6 @@
             
             const data = await response.json();
             const rawContent = data.choices[0].message.content;
-            
-            console.log("SISTEMA: Respuesta cruda de la IA:", rawContent);
 
             // Limpieza estricta de JSON con regex
             const match = rawContent.match(/\[[\s\S]*\]/);
@@ -631,8 +625,6 @@
                 if (!uid) {
                     throw new Error("No hay una sesión activa para guardar los datos.");
                 }
-
-                console.log("SISTEMA: Iniciando guardado masivo para UID:", uid);
 
                 for (const item of nuevasCredenciales) {
                     // UNIFICACIÓN EN EL PARSEO DE LA IA
@@ -665,8 +657,8 @@
 
                     // GUARDADO Y CAPTURA DE ID REAL
                     const docRef = await db.collection('passwords').add(dataToSave);
-                    console.log(`SISTEMA: Ítem guardado [${servicioRaw}] con ID: ${docRef.id}`);
-                }
+                    }
+
                 
                 showMsg(`¡${nuevasCredenciales.length} cuentas organizadas y guardadas!`);
                 textInput.value = ""; // Limpiar textarea
@@ -745,7 +737,6 @@
     }
 
     async function eliminarCredencial(id) {
-        console.log("SISTEMA_V2: Iniciando borrado real para ID:", id);
         
         if (!id || id === "undefined" || id === "null") {
             console.error("ERROR CRÍTICO: Se intentó eliminar un ítem sin ID de Firestore.");
@@ -758,7 +749,6 @@
             const docRef = db.collection('passwords').doc(id);
             await docRef.delete();
             
-            console.log("¡Borrado en base de datos exitoso!");
             showMsg("Registro eliminado correctamente.");
             
             // Forzar actualización visual
@@ -774,7 +764,6 @@
         const uid = auth.currentUser ? auth.currentUser.uid : (currentUser ? currentUser.uid : null);
         if (!uid) return alert("Debes estar autenticado para limpiar la bóveda.");
 
-        console.log("SISTEMA: Iniciando limpieza total de la bóveda para UID:", uid);
 
         try {
             const querySnapshot = await db.collection('passwords').where("userId", "==", uid).get();
@@ -789,7 +778,6 @@
             });
 
             await batch.commit();
-            console.log("SISTEMA: Bóveda limpiada con éxito.");
             showMsg("Bóveda vaciada correctamente.");
 
             // Limpieza inmediata del estado local y UI

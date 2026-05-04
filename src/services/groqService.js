@@ -41,9 +41,6 @@ export const extraerCredencialesDeTexto = async (textoPuro) => {
 
     const data = await response.json();
     const resultText = data.choices[0].message.content;
-    
-    // Depuración en consola
-    console.log("Respuesta de la IA (Raw):", resultText);
 
     // Limpieza extrema con regex para extraer solo el bloque del arreglo
     const match = resultText.match(/\[[\s\S]*\]/);
