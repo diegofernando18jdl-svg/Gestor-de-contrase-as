@@ -516,14 +516,14 @@
                 site: siteClean,
                 displaySite: siteInput, 
                 username: user, 
-                contrasena: encryptedPass,
+                clave: encryptedPass,
                 userId: currentUser.uid,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             if (editingId) {
                 await db.collection('passwords').doc(editingId).update({
-                    site: siteClean, displaySite: siteInput, username: user, contrasena: encryptedPass
+                    site: siteClean, displaySite: siteInput, username: user, clave: encryptedPass
                 });
                 showMsg("¡Registro Actualizado!");
                 cancelEdit(); 
@@ -537,11 +537,11 @@
         } catch(e) { alert("Error al guardar: " + e.message); }
     }
 
-    function startEdit(id, displaySite, username, contrasena) {
+    function startEdit(id, displaySite, username, clave) {
         editingId = id;
         document.getElementById('siteDomain').value = displaySite;
         document.getElementById('userName').value = username;
-        document.getElementById('passwordSave').value = contrasena;
+        document.getElementById('passwordSave').value = clave;
         
         const saveBtn = document.getElementById('saveBtn');
         saveBtn.innerHTML = '<i class="fas fa-sync"></i> Actualizar Datos';
@@ -600,7 +600,7 @@
                     messages: [
                         {
                             role: 'system',
-                            content: 'Tu única misión es devolver un JSON. La clave de la contraseña DEBE ser "contrasena" (así, sin la letra ñ). No uses "password", no uses "Contraseña". Recibirás un texto desordenado con credenciales. Extrae cada cuenta y devuelve EXCLUSIVAMENTE un array JSON válido usando EXACTAMENTE estas claves: "servicio", "usuario" y "contrasena". Prohibido incluir texto conversacional antes o después del JSON.'
+                            content: 'Tu única misión es devolver un JSON. Devuelve OBLIGATORIAMENTE un array de objetos JSON con exactamente estas 3 propiedades en minúsculas: "servicio", "usuario", "clave". Si el texto dice "Contraseña" o "Token", guárdalo en la propiedad "clave". Prohibido incluir texto conversacional antes o después del JSON.'
                         },
                         {
                             role: 'user',
@@ -635,25 +635,28 @@
                 console.log("SISTEMA: Iniciando guardado masivo para UID:", uid);
 
                 for (const item of nuevasCredenciales) {
-                    // RESOLUCIÓN DEFINITIVA DE LAS CONTRASEÑAS "---"
+                    // UNIFICACIÓN EN EL PARSEO DE LA IA
                     const servicioRaw = (item.servicio || "").trim();
                     const usuarioRaw = (item.usuario || "").trim();
-                    const passwordReal = (item.contrasena || item.password || item.Contraseña || item.contraseña || item.pass || "").trim();
+                    
+                    // FUERZA la extracción en el código JS por si la IA se equivoca
+                    const passReal = item.clave || item.contrasena || item.password || item.Contraseña || item.Token || item.pass;
 
-                    if (!servicioRaw || !passwordReal) {
+                    if (!servicioRaw || !passReal) {
                         console.warn("SISTEMA: Saltando entrada incompleta:", item);
                         continue;
                     }
 
-                    const encryptedPass = encrypt(passwordReal);
+                    const encryptedPass = encrypt(passReal);
                     let siteClean = servicioRaw.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\s+/g, '');
                     if(siteClean && !siteClean.includes('.')) siteClean += ".com";
 
+                    // ESTRUCTURA EXACTA PARA FIREBASE
                     const dataToSave = {
                         site: siteClean,
                         displaySite: servicioRaw,
                         username: usuarioRaw,
-                        contrasena: encryptedPass,
+                        clave: encryptedPass,
                         userId: uid,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
@@ -714,7 +717,10 @@
 
             const logoHtml = showLogos ? `<img src="${logoUrl}" class="site-logo" onerror="this.src='https://via.placeholder.com/32?text=?'">` : `<i class="fas fa-globe" style="margin-right:10px"></i>`;
             const nombreMostrar = d.displaySite || d.site;
-            const decryptedPass = decrypt(d.contrasena); // DESCIFRADO
+            
+            // UNIFICACIÓN EN EL RENDERIZADO (LA TABLA UI)
+            const valorCifrado = d.clave || d.contrasena || d.password || "";
+            const decryptedPass = decrypt(valorCifrado) || "---";
 
             row.innerHTML = `
                 <td><div class="logo-cell">${logoHtml}<span>${escapeHTML(nombreMostrar)}</span></div></td>
